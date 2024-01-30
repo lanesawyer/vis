@@ -5,13 +5,12 @@
     "strict": true,
     "paths": { "~/*": ["./*"] },
     "outDir": "./lib",
-    "module": "CommonJS",
+    "module": "CommonJS", // TODO this seems wrong, incompatible with verbatimModuleSyntax:true
     "target": "ES2022",
     "lib": ["es2022"],
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["./src/index.ts"],
-  "exclude": ["tests/", "**/*.test.ts"]
+  "include": ["./src/**/*"]
 }

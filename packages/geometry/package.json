@@ -25,9 +25,9 @@
   ],
   "license": "TBD",
   "type": "module",
+  "private": true,
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "private": true,
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "typecheck": "tsc --noEmit",

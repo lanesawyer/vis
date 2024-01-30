@@ -1,0 +1,16 @@
+// TODO - pick the right options for
+// stuff like outDir,lib/target etc...
+{
+  "compilerOptions": {
+    "strict": true,
+    "paths": { "~/*": ["./*"] },
+    "outDir": "./lib",
+    "module": "CommonJS",
+    "target": "ES2022",
+    "lib": ["es2022"],
+    "declaration": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": ["./src/**/*"]
+}

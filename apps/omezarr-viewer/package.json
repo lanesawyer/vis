@@ -31,7 +31,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "typecheck": "tsc --noEmit",
-    "demo": "esbuild src/scatterplot.ts --bundle --outfile=dst/scatterplot.js && cp public/* dst/",
+    "demo": "esbuild src/demo.ts --bundle --outfile=dst/demo.js && cp public/* dst/",
     "test": "jest --config=jest.config.cjs --watch"
   },
   "devDependencies": {

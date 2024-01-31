@@ -48,10 +48,8 @@
     "@aibs-vis/geometry": "workspace:*",
     "@aibs-vis/scatterbrain": "workspace:*",
     "@types/lodash": "^4.14.202",
-    "@vivjs/loaders": "^0.16.0",
     "lodash": "^4.17.21",
     "regl": "^2.1.0",
-    "zarr": "^0.6.2",
-    "zarrita": "0.4.0-next.8"
+    "zarr": "^0.6.2"
   }
 }

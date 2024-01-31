@@ -5,9 +5,10 @@
     "strict": true,
     "paths": { "~/*": ["./*"] },
     "outDir": "./lib",
-    "module": "CommonJS", // TODO this seems wrong, incompatible with verbatimModuleSyntax:true
+    "moduleResolution": "Node10",
+    "module": "ES2022",
     "target": "ES2022",
-    "lib": ["es2022"],
+    "lib": ["es2022", "DOM"],
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true

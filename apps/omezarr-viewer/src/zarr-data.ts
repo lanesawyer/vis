@@ -170,14 +170,31 @@ export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex
   const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
   const arr = await openArray({ store, path: level.path, mode: "r" });
   const result = await arr.get(buildQuery(r, axes, level.shape));
-  if (typeof result == "number" || result.shape.length !== 2) {
+  if (typeof result == "number") {
     throw new Error("oh noes, slice came back all weird");
   }
   return {
-    shape: result.shape as unknown as vec2,
-    buffer: result.flatten(),
+    shape: result.shape,
+    buffer: result,
   };
 }
+// export async function getRGBSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex: number) {
+//   dieIfMalformed(r);
+//   // put the request in native order
+//   const store = new HTTPStore(metadata.url);
+//   const scene = metadata.multiscales[0];
+//   const { axes } = scene;
+//   const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
+//   const arr = await openArray({ store, path: level.path, mode: "r" });
+//   const result = await arr.get(buildQuery(r, axes, level.shape));
+//   if (typeof result == "number" || result.shape.length !== 2) {
+//     throw new Error("oh noes, slice came back all weird");
+//   }
+//   return {
+//     shape: result.shape as unknown as vec2,
+//     buffer: result.flatten(),
+//   };
+// }
 
 export async function load(url: string) {
   const store = new HTTPStore(url);

@@ -42,8 +42,8 @@ export function buildImageRenderer(regl: REGL.Regl) {
     varying vec2 texCoord;
     void main(){
             float span = gamut.y-gamut.x;
-            float lum = texture2D(img, texCoord).r/span-gamut.x;
-            gl_FragColor = vec4(lum,lum,lum, 1.0);
+            vec3 lum = texture2D(img, texCoord).rgb/span-gamut.x;
+            gl_FragColor = vec4(lum, 1.0);
         }`,
     attributes: {
       pos: [0, 0, 1, 0, 1, 1, 0, 1],
@@ -107,7 +107,7 @@ function toZarrRequest(tile: VoxelTile): ZarrRequest {
         x: u,
         y: v,
         t: 0,
-        c: 0,
+        c: { min: 0, max: 3 },
         z: planeIndex,
       };
     case "xz":
@@ -144,10 +144,11 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
       // draw that texture to the screen with our command
       // console.log("upload new tile: ", cacheKeyFactory("lum", tile, settings));
       const tex = regl.texture({
-        data: new Float32Array(buffer),
+        data: buffer, // new Float32Array(buffer),
         width: shape[1],
-        height: shape[0], // TODO this swap is sus
-        format: LUMINANCE,
+        height: shape[2], // TODO this swap is sus
+        format: 'rgb',
+        // type: 'float'
       });
       return tex;
     },

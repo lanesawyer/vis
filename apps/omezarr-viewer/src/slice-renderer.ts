@@ -42,8 +42,8 @@ export function buildImageRenderer(regl: REGL.Regl) {
     varying vec2 texCoord;
     void main(){
             float span = gamut.y-gamut.x;
-            vec3 lum = texture2D(img, texCoord).rgb/span-gamut.x;
-            gl_FragColor = vec4(lum, 1.0);
+            float lum = texture2D(img, texCoord).r/span-gamut.x;
+            gl_FragColor = vec4(lum,lum,lum, 1.0);
         }`,
     attributes: {
       pos: [0, 0, 1, 0, 1, 1, 0, 1],
@@ -107,7 +107,7 @@ function toZarrRequest(tile: VoxelTile): ZarrRequest {
         x: u,
         y: v,
         t: 0,
-        c: { min: 0, max: 3 },
+        c: 0,
         z: planeIndex,
       };
     case "xz":
@@ -137,6 +137,7 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
 
   return {
     luminance: async () => {
+      console.log("req: ", tile);
       const vxl = await getSlice(dataset, toZarrRequest(tile), tile.layerIndex);
       // TODO: cancel?
       const { shape, buffer } = vxl;
@@ -144,10 +145,10 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
       // draw that texture to the screen with our command
       // console.log("upload new tile: ", cacheKeyFactory("lum", tile, settings));
       const tex = regl.texture({
-        data: buffer, // new Float32Array(buffer),
+        data: new Float32Array(buffer.flatten()),
         width: shape[1],
-        height: shape[2], // TODO this swap is sus
-        format: 'rgb',
+        height: shape[0], // TODO this swap is sus
+        format: "luminance",
         // type: 'float'
       });
       return tex;
@@ -176,8 +177,8 @@ export function getVisibleTiles(
   camera: Camera,
   plane: AxisAlignedPlane,
   planeIndex: number,
-  dataset: ZarrDataset,
-): { view: box2D, tiles: VoxelTile[] } {
+  dataset: ZarrDataset
+): { view: box2D; tiles: VoxelTile[] } {
   const thingy = pickBestScale(dataset, uvTable[plane], camera.view, camera.screen);
   const layerIndex = dataset.multiscales[0].datasets.indexOf(thingy);
 
@@ -196,6 +197,6 @@ export function getVisibleTiles(
         bounds: uv,
         planeIndex,
         layerIndex,
-      }))
-  }
+      })),
+  };
 }

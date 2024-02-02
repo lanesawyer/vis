@@ -1,5 +1,5 @@
 // I am the scatterplot demo //
-import { ImGui, ImGui_Impl } from '@zhobo63/imgui-ts'
+import { ImGui, ImGui_Impl } from "@zhobo63/imgui-ts";
 import REGL from "regl";
 import { ZarrDataset, explain, load } from "./zarr-data";
 import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
@@ -15,14 +15,14 @@ import {
 import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
 import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
-import { partial } from 'lodash';
+import { partial } from "lodash";
 
 const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/";
 const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
 
 const creepy =
   "https://aind-open-data.s3.amazonaws.com/SmartSPIM_644106_2022-12-09_12-12-39_stitched_2022-12-16_16-55-11/processed/OMEZarr/Ex_488_Em_525.zarr";
-const file = versa;
+const file = creepy;
 function renderAFrame(
   regl: REGL.Regl,
   cache: AsyncDataCache<REGL.Texture2D>,
@@ -40,6 +40,7 @@ function renderAFrame(
   ) => void
 ) {
   const { view, tiles: visibleTiles } = getVisibleTiles(camera, plane, planeIndex, dataset);
+
   const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
     3,
     33,
@@ -56,6 +57,7 @@ function renderAFrame(
     requestsForTile,
     renderer,
     (event) => {
+      console.log("frame event: ", event);
       switch (event.status) {
         case "error":
           throw event.error; // error boundary might catch this
@@ -90,12 +92,12 @@ class Demo {
   constructor(canvas: HTMLCanvasElement, size: vec2, change: (state: Demo) => FrameLifecycle) {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
 
-    this.sliceIndex = 0;
+    this.sliceIndex = 50;
     this.plane = "xy";
     this.mouse = "up";
     this.camera = {
       view: Box2D.create([0, 0], [w / h, 1]),
-      screen: [w, h]
+      screen: [w, h],
     };
     this.mousePos = [0, 0];
     this.gamut = { min: 0, max: 1 };
@@ -106,7 +108,7 @@ class Demo {
   }
   rerender() {
     if (this.curFrame !== null) {
-      this.curFrame.cancelFrame();
+      // this.curFrame.cancelFrame();
     }
     this.curFrame = this.onChange(this);
   }
@@ -116,10 +118,10 @@ class Demo {
   mouseMove(delta: vec2) {
     if (this.mouse === "down") {
       // drag the view
-      const { screen, view } = this.camera
+      const { screen, view } = this.camera;
       const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
       const c = Vec2.mul(p, Box2D.size(view));
-      this.camera = { view: Box2D.translate(view, c), screen }
+      this.camera = { view: Box2D.translate(view, c), screen };
       this.rerender();
     }
     this.mousePos = Vec2.add(this.mousePos, delta);
@@ -135,7 +137,10 @@ class Demo {
   zoom(scale: number) {
     const { view, screen } = this.camera;
     const m = Box2D.midpoint(view);
-    this.camera = { view: Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m), screen }
+    this.camera = {
+      view: Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m),
+      screen,
+    };
     this.rerender();
   }
   nextAxis() {
@@ -148,10 +153,11 @@ class Demo {
   }
 }
 
-let text: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, 'input text');
-let text_area: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, 'edit multiline');
+let text: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, "input text");
+let text_area: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, "edit multiline");
 
-function loop(demo: Demo, time: number): void {
+function loop(demo: Demo | null, time: number): void {
+  demo?.rerender();
   ImGui_Impl.NewFrame(time);
   ImGui.NewFrame();
   ImGui.Begin("Hello");
@@ -164,11 +170,10 @@ function loop(demo: Demo, time: number): void {
 
   // ImGui_Impl.ClearBuffer(new ImGui.ImVec4(0.25, 0.25, 0.25, 1));
   ImGui_Impl.RenderDrawData(ImGui.GetDrawData());
-  demo.rerender();
+
   window.requestAnimationFrame(partial(loop, demo));
 }
 function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
-
   canvas.onmousedown = (e: MouseEvent) => {
     demo.mouseButton("down");
   };
@@ -210,24 +215,25 @@ function setupGui(canvas: HTMLCanvasElement | WebGL2RenderingContext) {
     ImGui.StyleColorsDark();
     io.Fonts.AddFontDefault();
     ImGui_Impl.Init(canvas);
-  })
+  });
 }
 async function demotime() {
-  // const thing = document.getElementById('bs') as HTMLCanvasElement;
-  // const gl = thing.getContext('webgl');
-  // setupGui(gl);
-  const regl = REGL(
-    {
-      attributes: {
-        alpha: true,
-        preserveDrawingBuffer: true,
-        antialias: true,
-        premultipliedAlpha: true,
-      },
-      // extensions: ["OES_texture_float_linear", "EXT_color_buffer_float"]
-      extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
-    });
+  const thing = document.getElementById("glCanvas") as HTMLCanvasElement;
+
+  const gl = thing.getContext("webgl2");
+  const regl = REGL({
+    gl,
+    attributes: {
+      alpha: true,
+      preserveDrawingBuffer: true,
+      antialias: true,
+      premultipliedAlpha: true,
+    },
+    extensions: [],
+    // extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
+  });
   const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
+  setupGui(gl);
 
   const viewport = {
     x: 0,
@@ -248,7 +254,8 @@ async function demotime() {
       width: demo.canvas.width,
       height: demo.canvas.height,
     };
-    regl.clear({ color: [0, 0, 0, 1], depth: 1 });
+    regl._refresh();
+    regl.clear({ color: [0.3, 0, 0, 1], depth: 1 });
     return renderAFrame(
       regl,
       voxelSliceCache,
@@ -265,7 +272,7 @@ async function demotime() {
   const theDemo = new Demo(canvas, [viewport.width, viewport.height], renderPlease);
   setupEventHandlers(canvas, theDemo);
   theDemo.rerender();
-  // window.requestAnimationFrame(partial(loop, theDemo))
+  window.requestAnimationFrame(partial(loop, theDemo));
 }
 
 // since I am just included in a script tag in a raw html document, this is how we start:

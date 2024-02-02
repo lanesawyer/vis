@@ -17,6 +17,9 @@ importers:
       '@types/lodash':
         specifier: ^4.14.202
         version: 4.14.202
+      '@zhobo63/imgui-ts':
+        specifier: ^0.1.43
+        version: 0.1.43
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -1104,6 +1107,10 @@ packages:
       '@babel/types': 7.23.9
     dev: true
 
+  /@types/emscripten@1.39.10:
+    resolution: {integrity: sha512-TB/6hBkYQJxsZHSqyeuO1Jt0AB/bW6G7rHt9g7lML7SOF6lbgcHvw/Lr+69iqN0qxgXLhWKScAon73JNnptuDw==}
+    dev: false
+
   /@types/graceful-fs@4.1.9:
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
     dependencies:
@@ -1168,6 +1175,12 @@ packages:
     dependencies:
       '@types/yargs-parser': 21.0.3
     dev: true
+
+  /@zhobo63/imgui-ts@0.1.43:
+    resolution: {integrity: sha512-H3FLIhOYefNsgqT2AR2UXSuHOe7d3vKpbQWB3/liPexK4zHYrZJMDE1QiG54u6BPexGQZ4FhZqEKAmYWWpH/ng==}
+    dependencies:
+      '@types/emscripten': 1.39.10
+    dev: false
 
   /abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}

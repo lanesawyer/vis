@@ -48,6 +48,7 @@
     "@aibs-vis/geometry": "workspace:*",
     "@aibs-vis/scatterbrain": "workspace:*",
     "@types/lodash": "^4.14.202",
+    "@zhobo63/imgui-ts": "^0.1.43",
     "lodash": "^4.17.21",
     "regl": "^2.1.0",
     "zarr": "^0.6.2"

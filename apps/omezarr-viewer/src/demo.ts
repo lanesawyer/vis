@@ -1,5 +1,5 @@
 // I am the scatterplot demo //
-
+import { ImGui, ImGui_Impl } from '@zhobo63/imgui-ts'
 import REGL from "regl";
 import { ZarrDataset, explain, load } from "./zarr-data";
 import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
@@ -15,6 +15,7 @@ import {
 import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
 import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
+import { partial } from 'lodash';
 
 const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/";
 const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
@@ -147,7 +148,27 @@ class Demo {
   }
 }
 
+let text: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, 'input text');
+let text_area: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, 'edit multiline');
+
+function loop(demo: Demo, time: number): void {
+  ImGui_Impl.NewFrame(time);
+  ImGui.NewFrame();
+  ImGui.Begin("Hello");
+  ImGui.Text("Version " + ImGui.VERSION);
+  ImGui.InputText("Input", text);
+  ImGui.InputTextMultiline("Text", text_area);
+  ImGui.End();
+  ImGui.EndFrame();
+  ImGui.Render();
+
+  // ImGui_Impl.ClearBuffer(new ImGui.ImVec4(0.25, 0.25, 0.25, 1));
+  ImGui_Impl.RenderDrawData(ImGui.GetDrawData());
+  demo.rerender();
+  window.requestAnimationFrame(partial(loop, demo));
+}
 function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
+
   canvas.onmousedown = (e: MouseEvent) => {
     demo.mouseButton("down");
   };
@@ -181,16 +202,31 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
     }
   };
 }
+function setupGui(canvas: HTMLCanvasElement | WebGL2RenderingContext) {
+  ImGui.default().then(() => {
+    ImGui.CHECKVERSION();
+    ImGui.CreateContext();
+    const io: ImGui.IO = ImGui.GetIO();
+    ImGui.StyleColorsDark();
+    io.Fonts.AddFontDefault();
+    ImGui_Impl.Init(canvas);
+  })
+}
 async function demotime() {
-  const regl = REGL({
-    attributes: {
-      alpha: true,
-      preserveDrawingBuffer: true,
-      antialias: true,
-      premultipliedAlpha: true,
-    },
-    extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
-  });
+  // const thing = document.getElementById('bs') as HTMLCanvasElement;
+  // const gl = thing.getContext('webgl');
+  // setupGui(gl);
+  const regl = REGL(
+    {
+      attributes: {
+        alpha: true,
+        preserveDrawingBuffer: true,
+        antialias: true,
+        premultipliedAlpha: true,
+      },
+      // extensions: ["OES_texture_float_linear", "EXT_color_buffer_float"]
+      extensions: ["ANGLE_instanced_arrays", "OES_texture_float", "WEBGL_color_buffer_float"],
+    });
   const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
 
   const viewport = {
@@ -229,6 +265,7 @@ async function demotime() {
   const theDemo = new Demo(canvas, [viewport.width, viewport.height], renderPlease);
   setupEventHandlers(canvas, theDemo);
   theDemo.rerender();
+  // window.requestAnimationFrame(partial(loop, theDemo))
 }
 
 // since I am just included in a script tag in a raw html document, this is how we start:

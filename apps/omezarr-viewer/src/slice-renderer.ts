@@ -2,19 +2,33 @@ import REGL from "regl";
 import { ZarrDataset, ZarrRequest, getSlice, pickBestScale, sizeInVoxels } from "./zarr-data";
 import { Box2D, Interval, Vec2, box2D, vec2, vec4 } from "@aibs-vis/geometry";
 import { omit } from "lodash";
+import { Camera } from "./camera";
 
-type Props = { tile: vec4; view: vec4; gamut: vec2; viewport: REGL.BoundingBox; img: REGL.Texture2D };
+type Props = { tile: vec4; view: vec4; gamut: vec2; viewport: REGL.BoundingBox; img: REGL.Texture2D; rot: number };
 export function buildImageRenderer(regl: REGL.Regl) {
-  const cmd = regl<{ view: vec4; tile: vec4; img: REGL.Texture2D; gamut: vec2 }, { pos: REGL.BufferData }, Props>({
+  const cmd = regl<
+    { view: vec4; tile: vec4; img: REGL.Texture2D; gamut: vec2; rot: number },
+    { pos: REGL.BufferData },
+    Props
+  >({
     vert: ` precision highp float;
     attribute vec2 pos;
         
         uniform vec4 view;
         uniform vec4 tile;
+        uniform float rot;
         varying vec2 texCoord;
+        vec2 rotateTextureCoordinates(vec2 tx, float radians){
+          vec2 xy = tx-vec2(0.5,0.5);
+          mat2 R = mat2(
+            vec2(cos(radians),sin(radians)), 
+            vec2(-sin(radians),cos(radians))
+            );
+          return (R*xy)+vec2(0.5,0.5);
+        }
         void main(){
            vec2 tileSize = tile.zw-tile.xy;
-           texCoord = pos;
+           texCoord = rotateTextureCoordinates(pos,rot);
            vec2 obj = (pos.xy*tileSize+tile.xy);
             vec2 p = (obj-view.xy)/(view.zw-view.xy);
             // now, to clip space
@@ -35,6 +49,7 @@ export function buildImageRenderer(regl: REGL.Regl) {
       pos: [0, 0, 1, 0, 1, 1, 0, 1],
     },
     uniforms: {
+      rot: regl.prop<Props, "rot">("rot"),
       tile: regl.prop<Props, "tile">("tile"),
       view: regl.prop<Props, "view">("view"),
       img: regl.prop<Props, "img">("img"),
@@ -57,6 +72,7 @@ export function buildImageRenderer(regl: REGL.Regl) {
       // viewport,
       gamut: [gamut.min, gamut.max],
       img,
+      rot: settings.rotation,
     });
   };
 }
@@ -68,6 +84,7 @@ export type VoxelSliceRenderSettings = {
   dataset: ZarrDataset;
   view: box2D;
   gamut: Interval;
+  rotation: number;
   viewport: REGL.BoundingBox;
 };
 export type AxisAlignedPlane = "xy" | "yz" | "xz";
@@ -75,6 +92,7 @@ export type VoxelTile = {
   plane: AxisAlignedPlane;
   bounds: box2D; // in voxels, in the plane
   planeIndex: number;
+  layerIndex: number;
   // time and channel are always = 0, for now
 };
 
@@ -119,12 +137,12 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
 
   return {
     luminance: async () => {
-      const vxl = await getSlice(dataset, toZarrRequest(tile));
+      const vxl = await getSlice(dataset, toZarrRequest(tile), tile.layerIndex);
       // TODO: cancel?
       const { shape, buffer } = vxl;
       // upload the data to a webgl texture
       // draw that texture to the screen with our command
-      console.log("upload new tile: ", cacheKeyFactory("lum", tile, settings));
+      // console.log("upload new tile: ", cacheKeyFactory("lum", tile, settings));
       const tex = regl.texture({
         data: new Float32Array(buffer),
         width: shape[1],
@@ -154,20 +172,29 @@ const uvTable = {
 } as const;
 
 export function getVisibleTiles(
-  view: box2D,
+  camera: Camera,
   plane: AxisAlignedPlane,
   planeIndex: number,
-  dataset: ZarrDataset
-): VoxelTile[] {
-  const thingy = pickBestScale(dataset);
-  const size = sizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
-  if (!size) return [];
+  dataset: ZarrDataset,
+): { view: box2D, tiles: VoxelTile[] } {
+  const thingy = pickBestScale(dataset, uvTable[plane], camera.view, camera.screen);
+  const layerIndex = dataset.multiscales[0].datasets.indexOf(thingy);
 
-  return getAllTiles([256, 256], size)
-    .filter((tile) => !!Box2D.intersection(view, tile))
-    .map((uv) => ({
-      plane,
-      bounds: uv,
-      planeIndex,
-    }));
+  const size = sizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
+  if (!size) return { view: camera.view, tiles: [] };
+
+  // camera.view is in a made up dataspace, where 1=height of the current dataset
+  // thus, we have to convert it into a voxel-space camera for intersections
+  const voxelView = Box2D.scale(camera.view, size);
+  return {
+    view: voxelView,
+    tiles: getAllTiles([256, 256], size)
+      .filter((tile) => !!Box2D.intersection(voxelView, tile))
+      .map((uv) => ({
+        plane,
+        bounds: uv,
+        planeIndex,
+        layerIndex,
+      }))
+  }
 }

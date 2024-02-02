@@ -1,7 +1,7 @@
 // I am the scatterplot demo //
 
 import REGL from "regl";
-import { ZarrDataset, load } from "./zarr-data";
+import { ZarrDataset, explain, load } from "./zarr-data";
 import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
 import {
   AxisAlignedPlane,
@@ -14,18 +14,23 @@ import {
 } from "./slice-renderer";
 import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
 import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
+import { Camera } from "./camera";
 
-const file =
+const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/";
+const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
+
+const creepy =
   "https://aind-open-data.s3.amazonaws.com/SmartSPIM_644106_2022-12-09_12-12-39_stitched_2022-12-16_16-55-11/processed/OMEZarr/Ex_488_Em_525.zarr";
-
+const file = creepy;
 function renderAFrame(
   regl: REGL.Regl,
   cache: AsyncDataCache<REGL.Texture2D>,
-  view: box2D,
+  camera: Camera,
   plane: AxisAlignedPlane,
   planeIndex: number,
   dataset: ZarrDataset,
-  viewport: REGL.BoundingBox,
+  viewport: { x: number; y: number; width: number; height: number },
+  rotation: number,
   gamut: Interval,
   renderer: (
     item: VoxelTile,
@@ -33,9 +38,9 @@ function renderAFrame(
     tasks: Record<string, REGL.Texture2D | undefined>
   ) => void
 ) {
-  const visibleTiles = getVisibleTiles(view, plane, planeIndex, dataset);
+  const { view, tiles: visibleTiles } = getVisibleTiles(camera, plane, planeIndex, dataset);
   const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
-    5,
+    3,
     33,
     visibleTiles,
     cache,
@@ -45,6 +50,7 @@ function renderAFrame(
       regl,
       viewport,
       gamut,
+      rotation,
     },
     requestsForTile,
     renderer,
@@ -72,23 +78,30 @@ function renderAFrame(
 class Demo {
   mouse: "up" | "down";
   mousePos: vec2;
-  view: box2D;
+  camera: Camera;
   gamut: Interval;
   plane: AxisAlignedPlane;
   sliceIndex: number;
   canvas: HTMLCanvasElement;
   curFrame: FrameLifecycle | null;
+  rotation: number;
   onChange: (state: Demo) => FrameLifecycle;
   constructor(canvas: HTMLCanvasElement, size: vec2, change: (state: Demo) => FrameLifecycle) {
+    const [w, h] = [canvas.clientWidth, canvas.clientHeight];
+
     this.sliceIndex = 50;
     this.plane = "xy";
     this.mouse = "up";
-    this.view = Box2D.create([0, 0], size);
+    this.camera = {
+      view: Box2D.create([0, 0], [w / h, 1]),
+      screen: [w, h]
+    };
     this.mousePos = [0, 0];
     this.gamut = { min: 0, max: 2500 };
     this.onChange = change;
     this.canvas = canvas;
     this.curFrame = null;
+    this.rotation = 0;
   }
   rerender() {
     if (this.curFrame !== null) {
@@ -102,7 +115,10 @@ class Demo {
   mouseMove(delta: vec2) {
     if (this.mouse === "down") {
       // drag the view
-      this.view = Box2D.translate(this.view, delta);
+      const { screen, view } = this.camera
+      const p = Vec2.div(delta, [this.canvas.clientWidth, this.canvas.clientHeight]);
+      const c = Vec2.mul(p, Box2D.size(view));
+      this.camera = { view: Box2D.translate(view, c), screen }
       this.rerender();
     }
     this.mousePos = Vec2.add(this.mousePos, delta);
@@ -116,8 +132,17 @@ class Demo {
     this.rerender();
   }
   zoom(scale: number) {
-    const m = Box2D.midpoint(this.view);
-    this.view = Box2D.translate(Box2D.scale(Box2D.translate(this.view, Vec2.scale(m, -1)), [scale, scale]), m);
+    const { view, screen } = this.camera;
+    const m = Box2D.midpoint(view);
+    this.camera = { view: Box2D.translate(Box2D.scale(Box2D.translate(view, Vec2.scale(m, -1)), [scale, scale]), m), screen }
+    this.rerender();
+  }
+  nextAxis() {
+    this.plane = this.plane == "xy" ? "xz" : this.plane === "xz" ? "yz" : "xy";
+    this.rerender();
+  }
+  rotateTiles() {
+    this.rotation += Math.PI / 2;
     this.rerender();
   }
 }
@@ -134,7 +159,9 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
     demo.mouseMove([-e.movementX, e.movementY]);
   };
   canvas.onwheel = (e: WheelEvent) => {
-    if (e.ctrlKey || e.altKey) {
+    if (e.ctrlKey) {
+      demo.nextAxis();
+    } else if (e.altKey) {
       demo.changeSlice(e.deltaY > 0 ? 1 : -1);
     } else if (e.shiftKey) {
       demo.changeGamut(e.deltaY);
@@ -142,7 +169,17 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
       demo.zoom(e.deltaY > 0 ? 1.1 : 0.9);
     }
   };
-  // canvas.onkeyup = (e: KeyboardEvent) => {};
+  canvas.onkeydown = (e: KeyboardEvent) => {
+    switch (e.key) {
+      case "a":
+        demo.nextAxis();
+        break;
+      case "r":
+        demo.rotateTiles();
+        break;
+      default:
+    }
+  };
 }
 async function demotime() {
   const regl = REGL({
@@ -165,8 +202,9 @@ async function demotime() {
   const voxelSliceCache: AsyncDataCache<REGL.Texture2D> = new AsyncDataCache<REGL.Texture2D>();
   const imageRenderer = buildImageRenderer(regl);
   const zarr = await load(file);
+  explain(zarr);
   regl.clear({ color: [0, 0, 0, 1], depth: 1 });
-
+  canvas.tabIndex = 3; // get keyboard events please
   const renderPlease = (demo: Demo) => {
     const viewport = {
       x: 0,
@@ -178,11 +216,12 @@ async function demotime() {
     return renderAFrame(
       regl,
       voxelSliceCache,
-      demo.view,
+      demo.camera,
       demo.plane,
       demo.sliceIndex,
       zarr,
       viewport,
+      demo.rotation,
       demo.gamut,
       imageRenderer
     );

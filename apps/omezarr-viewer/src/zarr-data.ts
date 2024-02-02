@@ -1,8 +1,8 @@
 // lets make some easy to understand utils to access .zarr data stored in an s3 bucket somewhere
-import { Interval, limit } from "@aibs-vis/geometry";
+import { Box2D, Interval, box2D, limit } from "@aibs-vis/geometry";
 import { HTTPStore, NestedArray, TypedArray, openArray, openGroup, slice } from "zarr";
 import { some } from "lodash";
-import { vec2 } from "~/node_modules/@aibs-vis/geometry/lib/vec2";
+import { Vec2, vec2 } from "~/node_modules/@aibs-vis/geometry/lib/vec2";
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
@@ -68,11 +68,45 @@ async function loadMetadata(store: HTTPStore, attrs: ZarrAttrs) {
 
 type OmeDimension = "x" | "y" | "z" | "t" | "c";
 
+// function sizeOnScreen(full: box2D, relativeView: box2D, screen: vec2) {
+//   const pxView = Box2D.scale(relativeView, Box2D.size(full));
+//   const onScreen = Box2D.intersection(pxView, full);
+//   if (!onScreen) return [0, 0];
+
+//   const effective = Box2D.size(onScreen);
+//   // as a parameter, how much is on screen?
+//   const p = Vec2.div(effective, Box2D.size(full));
+//   const limit = Vec2.mul(p, screen);
+
+//   return limit[0] * limit[1] < effective[0] * effective[1] ? limit : effective
+// }
 export type ZarrRequest = Record<OmeDimension, number | Interval | null>;
-export function pickBestScale(dataset: ZarrDataset) {
-  // TODO
+export function pickBestScale(
+  dataset: ZarrDataset,
+  plane: {
+    u: OmeDimension;
+    v: OmeDimension;
+  },
+  relativeView: box2D, // a box in unit-space, relative to the dataset
+  // in the plane given above
+  displayResolution: vec2
+) {
   const datasets = dataset.multiscales[0].datasets;
-  return datasets[datasets.length - 1];
+  const axes = dataset.multiscales[0].axes;
+  const vxlPitch = (size: vec2) => Vec2.div([1, 1], size)
+  // size, in dataspace, of a pixel 1/res
+  const pxPitch = Vec2.div(Box2D.size(relativeView), displayResolution);
+  const dstToDesired = (a: vec2, goal: vec2) => Vec2.length(Vec2.sub(a, goal));
+  // we assume the datasets are ordered... hmmm TODO
+  const choice = datasets.reduce(
+    (bestSoFar, cur) =>
+      dstToDesired(vxlPitch(sizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
+        dstToDesired(vxlPitch(sizeInVoxels(plane, axes, cur)!), pxPitch)
+        ? cur
+        : bestSoFar,
+    datasets[0]
+  );
+  return choice ?? datasets[datasets.length - 1];
 }
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
   return axes.findIndex((axe) => axe.name === dim);
@@ -118,15 +152,23 @@ function dieIfMalformed(r: ZarrRequest) {
   // deal with me later
   // TODO
 }
-export async function getSlice(metadata: ZarrDataset, r: ZarrRequest) {
+export async function explain(z: ZarrDataset) {
+  console.dir(z);
+  const store = new HTTPStore(z.url);
+  for (const d of z.multiscales[0].datasets) {
+    openArray({ store, path: d.path, mode: "r" }).then((arr) => {
+      console.dir(arr);
+    });
+  }
+}
+export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex: number) {
   dieIfMalformed(r);
   // put the request in native order
   const store = new HTTPStore(metadata.url);
   const scene = metadata.multiscales[0];
   const { axes } = scene;
-  const level = pickBestScale(metadata);
+  const level = scene.datasets[layerIndex] ?? scene.datasets[scene.datasets.length - 1];
   const arr = await openArray({ store, path: level.path, mode: "r" });
-
   const result = await arr.get(buildQuery(r, axes, level.shape));
   if (typeof result == "number" || result.shape.length !== 2) {
     throw new Error("oh noes, slice came back all weird");

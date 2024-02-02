@@ -21,7 +21,7 @@ const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch
 
 const creepy =
   "https://aind-open-data.s3.amazonaws.com/SmartSPIM_644106_2022-12-09_12-12-39_stitched_2022-12-16_16-55-11/processed/OMEZarr/Ex_488_Em_525.zarr";
-const file = creepy;
+const file = versa;
 function renderAFrame(
   regl: REGL.Regl,
   cache: AsyncDataCache<REGL.Texture2D>,
@@ -89,7 +89,7 @@ class Demo {
   constructor(canvas: HTMLCanvasElement, size: vec2, change: (state: Demo) => FrameLifecycle) {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
 
-    this.sliceIndex = 50;
+    this.sliceIndex = 0;
     this.plane = "xy";
     this.mouse = "up";
     this.camera = {
@@ -97,7 +97,7 @@ class Demo {
       screen: [w, h]
     };
     this.mousePos = [0, 0];
-    this.gamut = { min: 0, max: 2500 };
+    this.gamut = { min: 0, max: 1 };
     this.onChange = change;
     this.canvas = canvas;
     this.curFrame = null;
@@ -128,7 +128,7 @@ class Demo {
     this.rerender();
   }
   changeGamut(delta: number) {
-    this.gamut = { min: this.gamut.min, max: this.gamut.max + delta };
+    this.gamut = { min: this.gamut.min, max: this.gamut.max * delta };
     this.rerender();
   }
   zoom(scale: number) {
@@ -164,7 +164,7 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: Demo) {
     } else if (e.altKey) {
       demo.changeSlice(e.deltaY > 0 ? 1 : -1);
     } else if (e.shiftKey) {
-      demo.changeGamut(e.deltaY);
+      demo.changeGamut(e.deltaY > 0 ? 1.05 : 0.95);
     } else {
       demo.zoom(e.deltaY > 0 ? 1.1 : 0.9);
     }

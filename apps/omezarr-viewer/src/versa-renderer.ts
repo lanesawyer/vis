@@ -181,17 +181,18 @@ export function getVisibleTiles(
   plane: AxisAlignedPlane,
   planeIndex: number,
   dataset: ZarrDataset
-): { view: box2D; tiles: VoxelTile[] } {
+): { layer: number; view: box2D; tiles: VoxelTile[] } {
   const thingy = pickBestScale(dataset, uvTable[plane], camera.view, camera.screen);
   const layerIndex = dataset.multiscales[0].datasets.indexOf(thingy);
 
   const size = sizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);
-  if (!size) return { view: camera.view, tiles: [] };
+  if (!size) return { layer: layerIndex, view: camera.view, tiles: [] };
 
   // camera.view is in a made up dataspace, where 1=height of the current dataset
   // thus, we have to convert it into a voxel-space camera for intersections
   const voxelView = Box2D.scale(camera.view, size);
   return {
+    layer: layerIndex,
     view: voxelView,
     tiles: getAllTiles([256, 256], size)
       .filter((tile) => !!Box2D.intersection(voxelView, tile))

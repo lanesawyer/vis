@@ -66,12 +66,70 @@ class VersaDemo {
     };
     window.requestAnimationFrame(loop);
   }
-  renderFrame() {
+  private renderFrame() {
     const { camera, plane, sliceIndex, dataset, cache, regl, gamut, renderer } = this;
-    const { view, tiles: visibleTiles } = getVisibleTiles(camera, plane, sliceIndex, dataset);
-    // this.screenBuffer = swap({ bounds: this.camera.view }, this.screenBuffer);
-    regl._refresh();
+    const { layer, view, tiles } = getVisibleTiles(camera, plane, sliceIndex, dataset);
     regl.clear({ color: [0, 0, 0, 0], depth: 1, framebuffer: this.screenBuffer.fbo });
+
+    const {
+      layer: baseLayer,
+      view: baseView,
+      tiles: baseTiles,
+    } = getVisibleTiles({ ...camera, screen: [1, 1] }, plane, sliceIndex, dataset);
+
+    if (layer === baseLayer) {
+      this.renderFrameHelper(baseView, baseTiles);
+      return;
+    }
+    const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
+      3,
+      33,
+      baseTiles,
+      cache,
+      {
+        view: baseView,
+        dataset,
+        regl,
+        target: this.screenBuffer.fbo,
+        viewport: {
+          x: 0,
+          y: 0,
+          width: this.canvas.clientWidth,
+          height: this.canvas.clientHeight,
+        },
+        gamut,
+      },
+      requestsForTile,
+      renderer,
+      (event) => {
+        switch (event.status) {
+          case "error":
+            throw event.error; // error boundary might catch this
+          case "progress":
+            break;
+          case "finished_synchronously":
+          case "finished":
+            this.curFrame = this.renderFrameHelper(view, tiles);
+            break;
+          case "begun":
+            break;
+          case "cancelled":
+            break;
+          default:
+        }
+      },
+      cacheKeyFactory
+    );
+    frame.cancelFrame();
+  }
+  // not my fav thing to do - but renderFrame and renderFrame helper are tightly linked
+  // to accomplish our smoke&mirrors to avoid flickering as tiles load in -
+  // the both make assumptions about state, and the contents of buffers. do not
+  // call either of them!
+  private renderFrameHelper(view: box2D, visibleTiles: VoxelTile[]) {
+    const { camera, dataset, cache, regl, gamut, renderer } = this;
+    this.screenBuffer.bounds = camera.view;
+    regl._refresh();
     const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
       3,
       33,
@@ -159,7 +217,6 @@ class VersaDemo {
       ImGui.EndFrame();
       ImGui.Render();
 
-      // ImGui_Impl.ClearBuffer(new ImGui.ImVec4(0.25, 0.25, 0.25, 1));
       ImGui_Impl.RenderDrawData(ImGui.GetDrawData());
       if (drawAgain) {
         window.setTimeout(() => this.rerender(), 5);
@@ -172,7 +229,7 @@ class VersaDemo {
     if (this.curFrame !== null) {
       this.curFrame.cancelFrame();
     }
-    this.curFrame = this.renderFrame();
+    this.renderFrame();
   }
   mouseButton(click: "up" | "down") {
     this.mouse = click;

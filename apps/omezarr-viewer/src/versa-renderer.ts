@@ -76,7 +76,6 @@ export function buildVersaRenderer(regl: REGL.Regl) {
   });
 
   return (item: VoxelTile, settings: VoxelSliceRenderSettings, channels: Record<string, Bfr | undefined>) => {
-    // regl._refresh();
     const { view, viewport, gamut, target } = settings;
     const { bounds } = item;
     const { R, G, B } = channels;
@@ -88,7 +87,6 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       R,
       G,
       B,
-      // viewport,
       gamut: [gamut.min, gamut.max],
     });
   };

@@ -44,10 +44,20 @@ export function buildImageRenderer(regl: REGL.Regl) {
     attributes: {
       pos: [0, 0, 1, 0, 1, 1, 0, 1],
     },
+    depth: {
+      enable: false,
+    },
     uniforms: {
       box: regl.prop<Props, "box">("box"),
       view: regl.prop<Props, "view">("view"),
       img: regl.prop<Props, "img">("img"),
+    },
+    blend: {
+      enable: true,
+      func: {
+        src: "src alpha",
+        dst: "one minus src alpha",
+      },
     },
     count: 4,
     primitive: "triangle fan",

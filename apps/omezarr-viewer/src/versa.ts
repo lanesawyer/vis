@@ -43,9 +43,10 @@ class VersaDemo {
   screenRenderer: ReturnType<typeof buildImageRenderer>;
   renderer: ReturnType<typeof buildVersaRenderer>;
   screenBuffer: { bounds: box2D; fbo: REGL.Framebuffer2D };
-
-  constructor(canvas: HTMLCanvasElement, dataset: ZarrDataset, regl: REGL.Regl, cache: AsyncDataCache<REGL.Texture2D>) {
+  datasets: string[]
+  constructor(canvas: HTMLCanvasElement, dataset: ZarrDataset, regl: REGL.Regl, cache: AsyncDataCache<REGL.Texture2D>, urls: string[]) {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
+    this.datasets = urls;
     this.camera = {
       view: Box2D.create([0, 0], [w / h, 1]),
       screen: [w, h],
@@ -412,7 +413,7 @@ async function demotime() {
   //       imageRenderer
   //     );
   //   };
-  const theDemo = new VersaDemo(canvas, zarr, regl, voxelSliceCache);
+  const theDemo = new VersaDemo(canvas, zarr, regl, voxelSliceCache, []);
 
   setupEventHandlers(canvas, theDemo);
   theDemo.rerender();

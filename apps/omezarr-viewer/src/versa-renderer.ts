@@ -198,6 +198,7 @@ export function getVisibleTiles(
   dataset: ZarrDataset
 ): { layer: number; view: box2D; tiles: VoxelTile[] } {
   const thingy = pickBestScale(dataset, uvTable[plane], camera.view, camera.screen);
+  // TODO: open the array, look at its chunks, use that size for the size of the tiles I request!
   const layerIndex = dataset.multiscales[0].datasets.indexOf(thingy);
 
   const size = sizeInVoxels(uvTable[plane], dataset.multiscales[0].axes, thingy);

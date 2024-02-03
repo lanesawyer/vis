@@ -18,15 +18,20 @@ import { Camera } from "./camera";
 import { buildImageRenderer } from "./image-renderer";
 import { ImGuiSliderFlags } from "@zhobo63/imgui-ts/src/imgui";
 import { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
+import { colorMapWidget } from "./components/color-map";
 
 const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
 const file = versa;
-
+type Channel = 'R' | 'G' | 'B'; // we can support 3 visual channels at once
+type ChannelColorSettings = {
+  gamut: Interval;
+  index: number;
+}
 class VersaDemo {
   mouse: "up" | "down";
   mousePos: vec2;
   camera: Camera;
-  gamut: Interval;
+  channels: Record<Channel, ChannelColorSettings>;
   plane: AxisAlignedPlane;
   sliceIndex: number;
   canvas: HTMLCanvasElement;
@@ -54,7 +59,20 @@ class VersaDemo {
     this.cache = cache;
 
     this.mousePos = [0, 0];
-    this.gamut = { min: 0, max: 0.5 };
+    this.channels = {
+      R: {
+        gamut: { min: 0, max: 1 },
+        index: 0,
+      },
+      G: {
+        gamut: { min: 0, max: 1 },
+        index: 1,
+      },
+      B: {
+        gamut: { min: 0, max: 1 },
+        index: 2,
+      }
+    }
     this.canvas = canvas;
     this.curFrame = null;
     this.rotation = 0;
@@ -67,10 +85,14 @@ class VersaDemo {
     window.requestAnimationFrame(loop);
   }
   private renderFrame() {
-    const { camera, plane, sliceIndex, dataset, cache, regl, gamut, renderer } = this;
+    const { camera, plane, sliceIndex, dataset, cache, regl, channels, renderer } = this;
     const { layer, view, tiles } = getVisibleTiles(camera, plane, sliceIndex, dataset);
     regl.clear({ color: [0, 0, 0, 0], depth: 1, framebuffer: this.screenBuffer.fbo });
-
+    const gamut = {
+      R: channels.R.gamut,
+      G: channels.G.gamut,
+      B: channels.B.gamut
+    }
     const {
       layer: baseLayer,
       view: baseView,
@@ -127,9 +149,14 @@ class VersaDemo {
   // the both make assumptions about state, and the contents of buffers. do not
   // call either of them!
   private renderFrameHelper(view: box2D, visibleTiles: VoxelTile[]) {
-    const { camera, dataset, cache, regl, gamut, renderer } = this;
+    const { camera, dataset, cache, regl, channels, renderer } = this;
     this.screenBuffer.bounds = camera.view;
     regl._refresh();
+    const gamut = {
+      R: channels.R.gamut,
+      G: channels.G.gamut,
+      B: channels.B.gamut
+    }
     const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
       3,
       33,
@@ -193,31 +220,46 @@ class VersaDemo {
     this.regl._refresh();
   }
 
-  uiGamut(v?: [number, number]): [number, number] {
-    if (v !== undefined) {
-      this.gamut = { min: v[0], max: v[1] };
-    }
-    return [this.gamut.min, this.gamut.max];
-  }
   drawUI(time: number) {
     let drawAgain = false;
+    const effects: Array<() => void> = [];
     // imgui wants mutable access to stuff... which is pretty weird - imAccess is nice, but all the vector-style updaters are nasty
-    let gamut: ImTuple2<number> = [this.gamut.min, this.gamut.max];
     try {
       this.regl._gl.bindFramebuffer(this.regl._gl.FRAMEBUFFER, null);
       ImGui_Impl.NewFrame(time);
       ImGui.NewFrame();
       ImGui.Begin("N E U R A L   G A Z E R");
-      if (ImGui.SliderFloat2("Gamut", gamut, 0, 9999, "%3f", ImGuiSliderFlags.Logarithmic)) {
-        this.gamut = { min: gamut[0], max: gamut[1] };
+      if (ImGui.Button("-")) {
         drawAgain = true;
+        effects.push(() => { this.changeSlice(-1); })
       }
+      ImGui.SameLine();
+      if (ImGui.Button("+")) {
+        drawAgain = true;
+        effects.push(() => { this.changeSlice(1); })
+      }
+      ImGui.SameLine();
+      ImGui.LabelText("Slide", this.sliceIndex.toFixed(0))
+
+
+      Object.entries(this.channels).forEach(([channel, settings]) => {
+        const result = colorMapWidget(channel, {
+          gamut: settings.gamut,
+          color: new ImGui.Vec4(channel === 'R' ? 255 : 0, channel === 'G' ? 255 : 0, channel === 'B' ? 255 : 0, 255),
+          useMe: true
+        })
+        if (result.changed) {
+          this.channels[channel as Channel].gamut = result.gamut
+          drawAgain = true;
+        }
+      })
       ImGui.Image;
       ImGui.End();
       ImGui.EndFrame();
       ImGui.Render();
 
       ImGui_Impl.RenderDrawData(ImGui.GetDrawData());
+      effects.forEach(fx => fx())
       if (drawAgain) {
         window.setTimeout(() => this.rerender(), 5);
       }
@@ -249,10 +291,10 @@ class VersaDemo {
     this.sliceIndex += delta;
     this.rerender();
   }
-  changeGamut(delta: number) {
-    this.gamut = { min: this.gamut.min, max: this.gamut.max * delta };
-    this.rerender();
-  }
+  // changeGamut(delta: number) {
+  //   this.gamut = { min: this.gamut.min, max: this.gamut.max * delta };
+  //   this.rerender();
+  // }
   zoom(scale: number) {
     const { view, screen } = this.camera;
     const m = Box2D.midpoint(view);
@@ -295,8 +337,6 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: VersaDemo) {
       demo.nextAxis();
     } else if (e.altKey) {
       demo.changeSlice(e.deltaY > 0 ? 1 : -1);
-    } else if (e.shiftKey) {
-      demo.changeGamut(e.deltaY > 0 ? 1.05 : 0.95);
     } else {
       demo.zoom(e.deltaY > 0 ? 1.1 : 0.9);
     }

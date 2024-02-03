@@ -9,7 +9,9 @@ type Props = {
   target: Framebuffer2D | null;
   tile: vec4;
   view: vec4;
-  gamut: vec2;
+  Rgamut: vec2;
+  Ggamut: vec2;
+  Bgamut: vec2;
   viewport: REGL.BoundingBox;
   R: REGL.Texture2D;
   G: REGL.Texture2D;
@@ -17,7 +19,11 @@ type Props = {
 };
 export function buildVersaRenderer(regl: REGL.Regl) {
   const cmd = regl<
-    { view: vec4; tile: vec4; R: REGL.Texture2D; G: REGL.Texture2D; B: REGL.Texture2D; gamut: vec2 },
+    {
+      view: vec4; tile: vec4; R: REGL.Texture2D; G: REGL.Texture2D; B: REGL.Texture2D; Rgamut: vec2;
+      Ggamut: vec2;
+      Bgamut: vec2;
+    },
     { pos: REGL.BufferData },
     Props
   >({
@@ -43,16 +49,21 @@ export function buildVersaRenderer(regl: REGL.Regl) {
     uniform sampler2D G;
     uniform sampler2D B; // for reasons which are pretty annoying
     // its more direct to do 3 separate channels...
-    uniform vec2 gamut;
+    uniform vec2 Rgamut;
+    uniform vec2 Ggamut;
+    uniform vec2 Bgamut;
+    
     varying vec2 texCoord;
     void main(){
-            float span = gamut.y-gamut.x;
-            vec3 lum = vec3(
+            vec3 mins = vec3(Rgamut.x,Ggamut.x,Bgamut.x);
+            vec3 maxs = vec3(Rgamut.y,Ggamut.y,Bgamut.y);
+            vec3 span = maxs-mins;
+            vec3 color = (vec3(
                 texture2D(R, texCoord).r,
                 texture2D(G, texCoord).r,
                 texture2D(B, texCoord).r
-            )/span-gamut.x;
-            gl_FragColor = vec4(lum, 1.0);
+            )-mins) /span;
+            gl_FragColor = vec4(color, 1.0);
         }`,
     framebuffer: regl.prop<Props, "target">("target"),
     attributes: {
@@ -64,7 +75,9 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       R: regl.prop<Props, "R">("R"),
       G: regl.prop<Props, "G">("G"),
       B: regl.prop<Props, "B">("B"),
-      gamut: regl.prop<Props, "gamut">("gamut"),
+      Rgamut: regl.prop<Props, "Rgamut">("Rgamut"),
+      Ggamut: regl.prop<Props, "Ggamut">("Ggamut"),
+      Bgamut: regl.prop<Props, "Bgamut">("Bgamut"),
     },
     depth: {
       enable: false,
@@ -87,7 +100,9 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       R,
       G,
       B,
-      gamut: [gamut.min, gamut.max],
+      Rgamut: [gamut.R.min, gamut.R.max],
+      Ggamut: [gamut.G.min, gamut.G.max],
+      Bgamut: [gamut.B.min, gamut.B.max],
     });
   };
 }
@@ -98,7 +113,7 @@ export type VoxelSliceRenderSettings = {
   regl: REGL.Regl;
   dataset: ZarrDataset;
   view: box2D;
-  gamut: Interval;
+  gamut: Record<'R' | 'G' | 'B', Interval>;
   viewport: REGL.BoundingBox;
   target: REGL.Framebuffer2D;
 };

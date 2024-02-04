@@ -16,7 +16,7 @@ import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
 import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
 import { buildImageRenderer } from "./image-renderer";
-import { ImGuiSliderFlags, ImVec2 } from "@zhobo63/imgui-ts/src/imgui";
+import { ImGuiSliderFlags, ImVec2, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";
 import { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
 import { colorMapWidget } from "./components/color-map";
 import { indexOf } from "lodash";
@@ -28,6 +28,7 @@ type ChannelColorSettings = {
   gamut: Interval;
   index: number;
 };
+const THUMB_SIZE = 64;
 class VersaDemo {
   mouse: "up" | "down";
   mousePos: vec2;
@@ -71,15 +72,15 @@ class VersaDemo {
     this.mousePos = [0, 0];
     this.channels = {
       R: {
-        gamut: { min: 0, max: 1 },
+        gamut: { min: 0, max: .21 },
         index: 0,
       },
       G: {
-        gamut: { min: 0, max: 1 },
+        gamut: { min: 0, max: .21 },
         index: 1,
       },
       B: {
-        gamut: { min: 0, max: 1 },
+        gamut: { min: 0, max: .21 },
         index: 2,
       },
     };
@@ -113,47 +114,42 @@ class VersaDemo {
     const indexOfZ = indexOfDimension(this.dataset, "z");
     if (indexOfZ < 0) return;
 
-    // const expectedSliceSize = sizeInVoxels({ u: "x", v: "y" }, this.dataset.multiscales[0].axes, smallestLayer);
-    // if (!expectedSliceSize) return;
-
-    // const staging = this.regl.texture({
-    //   width: expectedSliceSize[1],
-    //   height: expectedSliceSize[0],
-    //   format: "luminance",
-    // });
+    const getSliceTextures = async (z: number) => {
+      const req = {
+        c: 0,
+        t: 0,
+        x: null,
+        y: null,
+        z,
+      };
+      return Promise.all([
+        getSlice(this.dataset, { ...req, c: 0 }, smallestLayerIndex),
+        getSlice(this.dataset, { ...req, c: 1 }, smallestLayerIndex),
+        getSlice(this.dataset, { ...req, c: 2 }, smallestLayerIndex),
+      ] as const);
+    }
     const numSlices = smallestLayer.shape[indexOfZ];
     const unitBox = Box2D.create([0, 0], [1, 1]);
     for (let z = 0; z < numSlices; z++) {
       // TODO: handle multi-channel images...
-      const R = await getSlice(
-        this.dataset,
-        {
-          c: 0,
-          t: 0,
-          x: null,
-          y: null,
-          z,
-        },
-        smallestLayerIndex
-      );
-      const staging = this.regl.texture({
-        width: R.shape[1],
-        height: R.shape[0],
-        data: R.buffer.flatten(),
-        format: "luminance",
-      });
+      const buffers = await getSliceTextures(z);
+      const [R, G, B] = buffers.map(bfr => this.regl.texture({ width: bfr.shape[1], height: bfr.shape[0], data: bfr.buffer.flatten(), format: 'luminance' }))
 
-      const thumb = this.regl.framebuffer(64, 64);
+      const thumb = this.regl.framebuffer(THUMB_SIZE, THUMB_SIZE);
       // now render that to a much smaller texture...
-      this.screenRenderer({
-        box: Box2D.toFlatArray(unitBox),
-        img: staging,
+      this.renderer({ plane: 'xy', bounds: unitBox, layerIndex: smallestLayerIndex, planeIndex: z }, {
+        dataset: this.dataset,
+        gamut: this.channels,
+        regl: this.regl,
         target: thumb,
-        view: Box2D.toFlatArray(unitBox),
-      });
+        view: unitBox,
+        viewport: { x: 0, y: 0, width: THUMB_SIZE, height: THUMB_SIZE }
+      }, { R, G, B })
       this.sliceThumbs.push(thumb);
-
-      staging.destroy();
+      R.destroy();
+      G.destroy();
+      B.destroy();
+      // staging.destroy();
     }
   }
   private renderFrame() {
@@ -334,15 +330,19 @@ class VersaDemo {
           drawAgain = true;
         }
       });
+      const highlight = new ImVec4(0, 0.25, 0.65, 1.0)
+      const regular = new ImVec4(0.2, 0.2, 0.2, 1.0)
       for (const thumb of this.sliceThumbs) {
         if (
           // here we dig deep into the guts of a regl-managed texture... not super safe, and regl's types are not really set up for this:
           ImGui.ImageButton(
             // @ts-expect-error
             thumb?.color[0]?._texture?.texture ?? null,
-            new ImVec2(64, 64),
+            new ImVec2(THUMB_SIZE, THUMB_SIZE),
             new ImVec2(0, 0),
-            new ImVec2(1, 1)
+            new ImVec2(1, 1),
+            this.sliceIndex === this.sliceThumbs.indexOf(thumb) ? 3 : 0,
+            this.sliceIndex === this.sliceThumbs.indexOf(thumb) ? highlight : regular
           )
         ) {
           drawAgain = true;

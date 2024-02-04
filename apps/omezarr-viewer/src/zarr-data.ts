@@ -93,7 +93,7 @@ export function pickBestScale(
 ) {
   const datasets = dataset.multiscales[0].datasets;
   const axes = dataset.multiscales[0].axes;
-  const vxlPitch = (size: vec2) => Vec2.div([1, 1], size)
+  const vxlPitch = (size: vec2) => Vec2.div([1, 1], size);
   // size, in dataspace, of a pixel 1/res
   const pxPitch = Vec2.div(Box2D.size(relativeView), displayResolution);
   const dstToDesired = (a: vec2, goal: vec2) => Vec2.length(Vec2.sub(a, goal));
@@ -101,7 +101,7 @@ export function pickBestScale(
   const choice = datasets.reduce(
     (bestSoFar, cur) =>
       dstToDesired(vxlPitch(sizeInVoxels(plane, axes, bestSoFar)!), pxPitch) >
-        dstToDesired(vxlPitch(sizeInVoxels(plane, axes, cur)!), pxPitch)
+      dstToDesired(vxlPitch(sizeInVoxels(plane, axes, cur)!), pxPitch)
         ? cur
         : bestSoFar,
     datasets[0]
@@ -160,6 +160,9 @@ export async function explain(z: ZarrDataset) {
       console.dir(arr);
     });
   }
+}
+export function indexOfDimension(data: ZarrDataset, dim: OmeDimension) {
+  return data.multiscales[0].axes.findIndex((ax) => ax.name === dim);
 }
 export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex: number) {
   dieIfMalformed(r);

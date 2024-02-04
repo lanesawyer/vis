@@ -20,7 +20,12 @@ type Props = {
 export function buildVersaRenderer(regl: REGL.Regl) {
   const cmd = regl<
     {
-      view: vec4; tile: vec4; R: REGL.Texture2D; G: REGL.Texture2D; B: REGL.Texture2D; Rgamut: vec2;
+      view: vec4;
+      tile: vec4;
+      R: REGL.Texture2D;
+      G: REGL.Texture2D;
+      B: REGL.Texture2D;
+      Rgamut: vec2;
       Ggamut: vec2;
       Bgamut: vec2;
     },
@@ -100,9 +105,9 @@ export function buildVersaRenderer(regl: REGL.Regl) {
       R,
       G,
       B,
-      Rgamut: [gamut.R.min, gamut.R.max],
-      Ggamut: [gamut.G.min, gamut.G.max],
-      Bgamut: [gamut.B.min, gamut.B.max],
+      Rgamut: [gamut.R.gamut.min, gamut.R.gamut.max],
+      Ggamut: [gamut.G.gamut.min, gamut.G.gamut.max],
+      Bgamut: [gamut.B.gamut.min, gamut.B.gamut.max],
     });
   };
 }
@@ -113,7 +118,7 @@ export type VoxelSliceRenderSettings = {
   regl: REGL.Regl;
   dataset: ZarrDataset;
   view: box2D;
-  gamut: Record<'R' | 'G' | 'B', Interval>;
+  gamut: Record<"R" | "G" | "B", { gamut: Interval; index: number }>;
   viewport: REGL.BoundingBox;
   target: REGL.Framebuffer2D;
 };
@@ -141,7 +146,9 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
   };
 }
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-  return `${settings.dataset.url}_${JSON.stringify(omit(item, "desiredResolution"))}_${col}`;
+  return `${settings.dataset.url}_${JSON.stringify(omit(item, "desiredResolution"))}_${col}_ch=${
+    settings.gamut[col as "R" | "G" | "B"].index
+  }`;
 }
 const LUMINANCE = "luminance";
 export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, signal?: AbortSignal) {
@@ -160,15 +167,15 @@ export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSetti
   // lets hope the browser caches our 3x repeat calls to teh same data...
   return {
     R: async () => {
-      const vxl = await getSlice(dataset, toZarrRequest(tile, 0), tile.layerIndex);
+      const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.R.index), tile.layerIndex);
       return handleResponse(vxl);
     },
     G: async () => {
-      const vxl = await getSlice(dataset, toZarrRequest(tile, 1), tile.layerIndex);
+      const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.G.index), tile.layerIndex);
       return handleResponse(vxl);
     },
     B: async () => {
-      const vxl = await getSlice(dataset, toZarrRequest(tile, 2), tile.layerIndex);
+      const vxl = await getSlice(dataset, toZarrRequest(tile, settings.gamut.B.index), tile.layerIndex);
       return handleResponse(vxl);
     },
   };

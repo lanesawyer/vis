@@ -1,7 +1,7 @@
 // I am the scatterplot demo //
 import { ImGui, ImGui_Impl } from "@zhobo63/imgui-ts";
 import REGL from "regl";
-import { ZarrDataset, explain, load } from "./zarr-data";
+import { ZarrDataset, explain, getSlice, indexOfDimension, load, pickBestScale, sizeInVoxels } from "./zarr-data";
 import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
 import {
   AxisAlignedPlane,
@@ -16,17 +16,18 @@ import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
 import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
 import { buildImageRenderer } from "./image-renderer";
-import { ImGuiSliderFlags } from "@zhobo63/imgui-ts/src/imgui";
+import { ImGuiSliderFlags, ImVec2 } from "@zhobo63/imgui-ts/src/imgui";
 import { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
 import { colorMapWidget } from "./components/color-map";
+import { indexOf } from "lodash";
 
 const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
 const file = versa;
-type Channel = 'R' | 'G' | 'B'; // we can support 3 visual channels at once
+type Channel = "R" | "G" | "B"; // we can support 3 visual channels at once
 type ChannelColorSettings = {
   gamut: Interval;
   index: number;
-}
+};
 class VersaDemo {
   mouse: "up" | "down";
   mousePos: vec2;
@@ -43,8 +44,16 @@ class VersaDemo {
   screenRenderer: ReturnType<typeof buildImageRenderer>;
   renderer: ReturnType<typeof buildVersaRenderer>;
   screenBuffer: { bounds: box2D; fbo: REGL.Framebuffer2D };
-  datasets: string[]
-  constructor(canvas: HTMLCanvasElement, dataset: ZarrDataset, regl: REGL.Regl, cache: AsyncDataCache<REGL.Texture2D>, urls: string[]) {
+  datasets: string[];
+  sliceThumbs: REGL.Framebuffer2D[];
+
+  constructor(
+    canvas: HTMLCanvasElement,
+    dataset: ZarrDataset,
+    regl: REGL.Regl,
+    cache: AsyncDataCache<REGL.Texture2D>,
+    urls: string[]
+  ) {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
     this.datasets = urls;
     this.camera = {
@@ -72,8 +81,8 @@ class VersaDemo {
       B: {
         gamut: { min: 0, max: 1 },
         index: 2,
-      }
-    }
+      },
+    };
     this.canvas = canvas;
     this.curFrame = null;
     this.rotation = 0;
@@ -84,16 +93,78 @@ class VersaDemo {
       window.requestAnimationFrame(loop);
     };
     window.requestAnimationFrame(loop);
+    this.sliceThumbs = [];
+    this.initThumbnails();
+  }
+  async initThumbnails() {
+    // TODO cleanupThumbnails();
+
+    const smallestLayer = pickBestScale(
+      this.dataset,
+      {
+        u: "x",
+        v: "y",
+      },
+      Box2D.create([0, 0], [1, 1]),
+      [1, 1]
+    );
+    const smallestLayerIndex = this.dataset.multiscales[0].datasets.indexOf(smallestLayer);
+    // how many slices are there?
+    const indexOfZ = indexOfDimension(this.dataset, "z");
+    if (indexOfZ < 0) return;
+
+    // const expectedSliceSize = sizeInVoxels({ u: "x", v: "y" }, this.dataset.multiscales[0].axes, smallestLayer);
+    // if (!expectedSliceSize) return;
+
+    // const staging = this.regl.texture({
+    //   width: expectedSliceSize[1],
+    //   height: expectedSliceSize[0],
+    //   format: "luminance",
+    // });
+    const numSlices = smallestLayer.shape[indexOfZ];
+    const unitBox = Box2D.create([0, 0], [1, 1]);
+    for (let z = 0; z < numSlices; z++) {
+      // TODO: handle multi-channel images...
+      const R = await getSlice(
+        this.dataset,
+        {
+          c: 0,
+          t: 0,
+          x: null,
+          y: null,
+          z,
+        },
+        smallestLayerIndex
+      );
+      const staging = this.regl.texture({
+        width: R.shape[1],
+        height: R.shape[0],
+        data: R.buffer.flatten(),
+        format: "luminance",
+      });
+
+      const thumb = this.regl.framebuffer(64, 64);
+      // now render that to a much smaller texture...
+      this.screenRenderer({
+        box: Box2D.toFlatArray(unitBox),
+        img: staging,
+        target: thumb,
+        view: Box2D.toFlatArray(unitBox),
+      });
+      this.sliceThumbs.push(thumb);
+
+      staging.destroy();
+    }
   }
   private renderFrame() {
     const { camera, plane, sliceIndex, dataset, cache, regl, channels, renderer } = this;
     const { layer, view, tiles } = getVisibleTiles(camera, plane, sliceIndex, dataset);
     regl.clear({ color: [0, 0, 0, 0], depth: 1, framebuffer: this.screenBuffer.fbo });
-    const gamut = {
-      R: channels.R.gamut,
-      G: channels.G.gamut,
-      B: channels.B.gamut
-    }
+    // const gamut = {
+    //   R: channels.R.gamut,
+    //   G: channels.G.gamut,
+    //   B: channels.B.gamut,
+    // };
     const {
       layer: baseLayer,
       view: baseView,
@@ -120,7 +191,7 @@ class VersaDemo {
           width: this.canvas.clientWidth,
           height: this.canvas.clientHeight,
         },
-        gamut,
+        gamut: channels,
       },
       requestsForTile,
       renderer,
@@ -156,8 +227,8 @@ class VersaDemo {
     const gamut = {
       R: channels.R.gamut,
       G: channels.G.gamut,
-      B: channels.B.gamut
-    }
+      B: channels.B.gamut,
+    };
     const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
       3,
       33,
@@ -174,7 +245,7 @@ class VersaDemo {
           width: this.canvas.clientWidth,
           height: this.canvas.clientHeight,
         },
-        gamut,
+        gamut: channels,
       },
       requestsForTile,
       renderer,
@@ -232,35 +303,59 @@ class VersaDemo {
       ImGui.Begin("N E U R A L   G A Z E R");
       if (ImGui.Button("-")) {
         drawAgain = true;
-        effects.push(() => { this.changeSlice(-1); })
+        effects.push(() => {
+          this.changeSlice(-1);
+        });
       }
       ImGui.SameLine();
       if (ImGui.Button("+")) {
         drawAgain = true;
-        effects.push(() => { this.changeSlice(1); })
+        effects.push(() => {
+          this.changeSlice(1);
+        });
       }
       ImGui.SameLine();
-      ImGui.LabelText("Slide", this.sliceIndex.toFixed(0))
-
-
+      ImGui.LabelText("Slide", this.sliceIndex.toFixed(0));
+      // TODO: count the available channels that we could use for color!
       Object.entries(this.channels).forEach(([channel, settings]) => {
-        const result = colorMapWidget(channel, {
-          gamut: settings.gamut,
-          color: new ImGui.Vec4(channel === 'R' ? 255 : 0, channel === 'G' ? 255 : 0, channel === 'B' ? 255 : 0, 255),
-          useMe: true
-        })
+        const result = colorMapWidget(
+          channel,
+          {
+            gamut: settings.gamut,
+            color: new ImGui.Vec4(channel === "R" ? 255 : 0, channel === "G" ? 255 : 0, channel === "B" ? 255 : 0, 255),
+            useMe: true,
+            index: settings.index,
+          },
+          3
+        );
         if (result.changed) {
-          this.channels[channel as Channel].gamut = result.gamut
+          this.channels[channel as Channel].gamut = result.gamut;
+          this.channels[channel as Channel].index = result.index;
           drawAgain = true;
         }
-      })
-      ImGui.Image;
+      });
+      for (const thumb of this.sliceThumbs) {
+        if (
+          // here we dig deep into the guts of a regl-managed texture... not super safe, and regl's types are not really set up for this:
+          ImGui.ImageButton(
+            // @ts-expect-error
+            thumb?.color[0]?._texture?.texture ?? null,
+            new ImVec2(64, 64),
+            new ImVec2(0, 0),
+            new ImVec2(1, 1)
+          )
+        ) {
+          drawAgain = true;
+          effects.push(() => this.setSlice(this.sliceThumbs.indexOf(thumb)));
+        }
+        ImGui.SameLine();
+      }
       ImGui.End();
       ImGui.EndFrame();
       ImGui.Render();
 
       ImGui_Impl.RenderDrawData(ImGui.GetDrawData());
-      effects.forEach(fx => fx())
+      effects.forEach((fx) => fx());
       if (drawAgain) {
         window.setTimeout(() => this.rerender(), 5);
       }
@@ -290,6 +385,10 @@ class VersaDemo {
   }
   changeSlice(delta: number) {
     this.sliceIndex += delta;
+    this.rerender();
+  }
+  setSlice(sliceIndex: number) {
+    this.sliceIndex = sliceIndex;
     this.rerender();
   }
   // changeGamut(delta: number) {

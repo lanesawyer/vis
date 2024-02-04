@@ -28,7 +28,7 @@ type ChannelColorSettings = {
   gamut: Interval;
   index: number;
 };
-const THUMB_SIZE = 64;
+const THUMB_SIZE = 128;
 class VersaDemo {
   mouse: "up" | "down";
   mousePos: vec2;
@@ -131,7 +131,6 @@ class VersaDemo {
     const numSlices = smallestLayer.shape[indexOfZ];
     const unitBox = Box2D.create([0, 0], [1, 1]);
     for (let z = 0; z < numSlices; z++) {
-      // TODO: handle multi-channel images...
       const buffers = await getSliceTextures(z);
       const [R, G, B] = buffers.map(bfr => this.regl.texture({ width: bfr.shape[1], height: bfr.shape[0], data: bfr.buffer.flatten(), format: 'luminance' }))
 
@@ -149,26 +148,26 @@ class VersaDemo {
       R.destroy();
       G.destroy();
       B.destroy();
-      // staging.destroy();
     }
   }
   private renderFrame() {
     const { camera, plane, sliceIndex, dataset, cache, regl, channels, renderer } = this;
     const { layer, view, tiles } = getVisibleTiles(camera, plane, sliceIndex, dataset);
+    // erase our buffer that holds the render'd dataset image - which lets the UI 
+    // re-render itself independantly
     regl.clear({ color: [0, 0, 0, 0], depth: 1, framebuffer: this.screenBuffer.fbo });
-    // const gamut = {
-    //   R: channels.R.gamut,
-    //   G: channels.G.gamut,
-    //   B: channels.B.gamut,
-    // };
+
+    // get the lowest-resolution view of the current slice - the idea being that we keep
+    // it cached, and always draw it UNDER the actual layer we want to see, based on our zoom.
+    // this prevents a flickering black frame when we zoom in to a new, higher resolution layer
     const {
       layer: baseLayer,
       view: baseView,
       tiles: baseTiles,
     } = getVisibleTiles({ ...camera, screen: [1, 1] }, plane, sliceIndex, dataset);
-
     if (layer === baseLayer) {
       this.renderFrameHelper(baseView, baseTiles);
+      // if the layer we WANT is actually the lowest res layer, then we're done here and now!
       return;
     }
     const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
@@ -297,21 +296,7 @@ class VersaDemo {
       ImGui_Impl.NewFrame(time);
       ImGui.NewFrame();
       ImGui.Begin("N E U R A L   G A Z E R");
-      if (ImGui.Button("-")) {
-        drawAgain = true;
-        effects.push(() => {
-          this.changeSlice(-1);
-        });
-      }
-      ImGui.SameLine();
-      if (ImGui.Button("+")) {
-        drawAgain = true;
-        effects.push(() => {
-          this.changeSlice(1);
-        });
-      }
-      ImGui.SameLine();
-      ImGui.LabelText("Slide", this.sliceIndex.toFixed(0));
+
       // TODO: count the available channels that we could use for color!
       Object.entries(this.channels).forEach(([channel, settings]) => {
         const result = colorMapWidget(
@@ -341,6 +326,7 @@ class VersaDemo {
             new ImVec2(THUMB_SIZE, THUMB_SIZE),
             new ImVec2(0, 0),
             new ImVec2(1, 1),
+            // draw a little box around the selected slice:
             this.sliceIndex === this.sliceThumbs.indexOf(thumb) ? 3 : 0,
             this.sliceIndex === this.sliceThumbs.indexOf(thumb) ? highlight : regular
           )
@@ -414,9 +400,6 @@ class VersaDemo {
   }
 }
 
-let text: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, "input text");
-let text_area: ImGui.ImStringBuffer = new ImGui.ImStringBuffer(128, "edit multiline");
-
 function setupEventHandlers(canvas: HTMLCanvasElement, demo: VersaDemo) {
   canvas.onmousedown = (e: MouseEvent) => {
     if (ImGui.GetIO().WantCaptureMouse) return;
@@ -483,35 +466,9 @@ async function demotime() {
   const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
   setupGui(gl);
   const voxelSliceCache: AsyncDataCache<REGL.Texture2D> = new AsyncDataCache<REGL.Texture2D>();
-  //   const imageRenderer = buildVersaRenderer(regl);
   const zarr = await load(file);
   explain(zarr);
 
-  //   regl.clear({ framebuffer: null, color: [0, 0, 1, 1], depth: 1 });
-  //   canvas.tabIndex = 3; // get keyboard events please
-  //   const renderPlease = (demo: VersaDemo, time: number) => {
-  //     const viewport = {
-  //       x: 0,
-  //       y: 0,
-  //       width: demo.canvas.width,
-  //       height: demo.canvas.height,
-  //     };
-  //     regl.clear({ color: [0, 0, 0, 1], depth: 1 });
-  //     renderGui(time);
-  //     regl._refresh();
-  //     return renderFrame(
-  //       regl,
-  //       voxelSliceCache,
-  //       demo.camera,
-  //       demo.plane,
-  //       demo.sliceIndex,
-  //       zarr,
-  //       viewport,
-  //       demo.rotation,
-  //       demo.gamut,
-  //       imageRenderer
-  //     );
-  //   };
   const theDemo = new VersaDemo(canvas, zarr, regl, voxelSliceCache, []);
 
   setupEventHandlers(canvas, theDemo);

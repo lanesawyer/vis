@@ -16,10 +16,9 @@ import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
 import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
 import { buildImageRenderer } from "./image-renderer";
-import { ImGuiSliderFlags, ImVec2, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";
-import { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
+import { ImVec2, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";
 import { colorMapWidget } from "./components/color-map";
-import { indexOf } from "lodash";
+import { initDrawableInterface } from "./annotation/path";
 
 const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
 const file = versa;
@@ -96,6 +95,13 @@ class VersaDemo {
     window.requestAnimationFrame(loop);
     this.sliceThumbs = [];
     this.initThumbnails();
+  }
+  setupEventHandlers() {
+    const canvas = this.canvas;
+
+    // initDrawableInterface(canvas, {
+
+    // })
   }
   async initThumbnails() {
     // TODO cleanupThumbnails();

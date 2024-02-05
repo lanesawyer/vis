@@ -1,7 +1,16 @@
 // I am the scatterplot demo //
 import { ImGui, ImGui_Impl } from "@zhobo63/imgui-ts";
 import REGL from "regl";
-import { ZarrDataset, explain, getSlice, indexOfDimension, load, pickBestScale, sizeInVoxels } from "./zarr-data";
+import {
+  ZarrDataset,
+  explain,
+  getSlice,
+  indexOfDimension,
+  load,
+  pickBestScale,
+  sizeInUnits,
+  sizeInVoxels,
+} from "./zarr-data";
 import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
 import {
   AxisAlignedPlane,
@@ -21,7 +30,9 @@ import { colorMapWidget } from "./components/color-map";
 import { initDrawableInterface } from "./annotation/path";
 
 const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
-const file = versa;
+const b = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/ome_zarr/20231207.1/1282139033/";
+const scott = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/ome_zarr/20231204/1197986710/";
+const file = scott;
 type Channel = "R" | "G" | "B"; // we can support 3 visual channels at once
 type ChannelColorSettings = {
   gamut: Interval;
@@ -46,7 +57,7 @@ class VersaDemo {
   screenBuffer: { bounds: box2D; fbo: REGL.Framebuffer2D };
   datasets: string[];
   sliceThumbs: REGL.Framebuffer2D[];
-
+  thumbWidth = 64;
   constructor(
     canvas: HTMLCanvasElement,
     dataset: ZarrDataset,
@@ -57,7 +68,7 @@ class VersaDemo {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
     this.datasets = urls;
     this.camera = {
-      view: Box2D.create([0, 0], [w / h, 1]),
+      view: Box2D.create([0, 0], [(10 * w) / h, 10]),
       screen: [w, h],
     };
     this.screenBuffer = { bounds: this.camera.view, fbo: regl.framebuffer(w, h) };
@@ -71,15 +82,15 @@ class VersaDemo {
     this.mousePos = [0, 0];
     this.channels = {
       R: {
-        gamut: { min: 0, max: .21 },
+        gamut: { min: 0, max: 0.21 },
         index: 0,
       },
       G: {
-        gamut: { min: 0, max: .21 },
+        gamut: { min: 0, max: 0.21 },
         index: 1,
       },
       B: {
-        gamut: { min: 0, max: .21 },
+        gamut: { min: 0, max: 0.21 },
         index: 2,
       },
     };
@@ -105,6 +116,14 @@ class VersaDemo {
   }
   async initThumbnails() {
     // TODO cleanupThumbnails();
+    const sliceSize = sizeInUnits(
+      {
+        u: "x",
+        v: "y",
+      },
+      this.dataset.multiscales[0].axes,
+      this.dataset.multiscales[0].datasets[0]
+    )!;
 
     const smallestLayer = pickBestScale(
       this.dataset,
@@ -112,14 +131,18 @@ class VersaDemo {
         u: "x",
         v: "y",
       },
-      Box2D.create([0, 0], [1, 1]),
+      Box2D.create([0, 0], sliceSize),
       [1, 1]
     );
     const smallestLayerIndex = this.dataset.multiscales[0].datasets.indexOf(smallestLayer);
     // how many slices are there?
-    const indexOfZ = indexOfDimension(this.dataset, "z");
+    const indexOfZ = indexOfDimension(this.dataset.multiscales[0].axes, "z");
     if (indexOfZ < 0) return;
-
+    // get the size, in real units
+    const sizeInMM = sizeInUnits({ u: "x", v: "y" }, this.dataset.multiscales[0].axes, smallestLayer)!;
+    // get the aspect ratio, widen the thumbslices...
+    const r = sizeInMM[0] / sizeInMM[1];
+    this.thumbWidth = THUMB_SIZE * r;
     const getSliceTextures = async (z: number) => {
       const req = {
         c: 0,
@@ -133,33 +156,48 @@ class VersaDemo {
         getSlice(this.dataset, { ...req, c: 1 }, smallestLayerIndex),
         getSlice(this.dataset, { ...req, c: 2 }, smallestLayerIndex),
       ] as const);
-    }
+    };
     const numSlices = smallestLayer.shape[indexOfZ];
     const unitBox = Box2D.create([0, 0], [1, 1]);
     for (let z = 0; z < numSlices; z++) {
       const buffers = await getSliceTextures(z);
-      const [R, G, B] = buffers.map(bfr => this.regl.texture({ width: bfr.shape[1], height: bfr.shape[0], data: bfr.buffer.flatten(), format: 'luminance' }))
+      const [R, G, B] = buffers.map((bfr) =>
+        this.regl.texture({
+          width: bfr.shape[1],
+          height: bfr.shape[0],
+          data: bfr.buffer.flatten(),
+          format: "luminance",
+        })
+      );
 
       const thumb = this.regl.framebuffer(THUMB_SIZE, THUMB_SIZE);
       // now render that to a much smaller texture...
-      this.renderer({ plane: 'xy', bounds: unitBox, layerIndex: smallestLayerIndex, planeIndex: z }, {
-        dataset: this.dataset,
-        gamut: this.channels,
-        regl: this.regl,
-        target: thumb,
-        view: unitBox,
-        viewport: { x: 0, y: 0, width: THUMB_SIZE, height: THUMB_SIZE }
-      }, { R, G, B })
+      this.renderer(
+        { plane: "xy", bounds: unitBox, layerIndex: smallestLayerIndex, planeIndex: z },
+        {
+          dataset: this.dataset,
+          gamut: this.channels,
+          regl: this.regl,
+          target: thumb,
+          view: unitBox,
+          viewport: { x: 0, y: 0, width: THUMB_SIZE, height: THUMB_SIZE },
+        },
+        { R, G, B }
+      );
       this.sliceThumbs.push(thumb);
       R.destroy();
       G.destroy();
       B.destroy();
     }
   }
+  private upsideDown(v: box2D) {
+    const { minCorner, maxCorner } = v;
+    return Box2D.create([minCorner[0], maxCorner[1]], [maxCorner[0], minCorner[1]]);
+  }
   private renderFrame() {
     const { camera, plane, sliceIndex, dataset, cache, regl, channels, renderer } = this;
     const { layer, view, tiles } = getVisibleTiles(camera, plane, sliceIndex, dataset);
-    // erase our buffer that holds the render'd dataset image - which lets the UI 
+    // erase our buffer that holds the render'd dataset image - which lets the UI
     // re-render itself independantly
     regl.clear({ color: [0, 0, 0, 0], depth: 1, framebuffer: this.screenBuffer.fbo });
 
@@ -172,8 +210,30 @@ class VersaDemo {
       tiles: baseTiles,
     } = getVisibleTiles({ ...camera, screen: [1, 1] }, plane, sliceIndex, dataset);
     if (layer === baseLayer) {
-      this.renderFrameHelper(baseView, baseTiles);
+      this.curFrame = this.renderFrameHelper(baseView, baseTiles);
       // if the layer we WANT is actually the lowest res layer, then we're done here and now!
+      return;
+    }
+    const baseSettings = {
+      view: baseView,
+      dataset,
+      regl,
+      target: this.screenBuffer.fbo,
+      viewport: {
+        x: 0,
+        y: 0,
+        width: this.canvas.clientWidth,
+        height: this.canvas.clientHeight,
+      },
+      gamut: channels,
+    };
+
+    const cached = baseTiles.reduce(
+      (count, cur) => (cache.isCached(cacheKeyFactory("R", cur, baseSettings)) ? 1 + count : count),
+      0
+    );
+    if (cached === 0) {
+      this.curFrame = this.renderFrameHelper(view, tiles);
       return;
     }
     const frame = beginLongRunningFrame<REGL.Texture2D, VoxelTile, VoxelSliceRenderSettings>(
@@ -181,19 +241,7 @@ class VersaDemo {
       33,
       baseTiles,
       cache,
-      {
-        view: baseView,
-        dataset,
-        regl,
-        target: this.screenBuffer.fbo,
-        viewport: {
-          x: 0,
-          y: 0,
-          width: this.canvas.clientWidth,
-          height: this.canvas.clientHeight,
-        },
-        gamut: channels,
-      },
+      baseSettings,
       requestsForTile,
       renderer,
       (event) => {
@@ -204,11 +252,13 @@ class VersaDemo {
             break;
           case "finished_synchronously":
           case "finished":
+            console.log("finished base-layer... start real frame!");
             this.curFrame = this.renderFrameHelper(view, tiles);
             break;
           case "begun":
             break;
           case "cancelled":
+            this.curFrame = this.renderFrameHelper(view, tiles);
             break;
           default:
         }
@@ -236,7 +286,7 @@ class VersaDemo {
       visibleTiles,
       cache,
       {
-        view,
+        view: view,
         dataset,
         regl,
         target: this.screenBuffer.fbo,
@@ -284,7 +334,7 @@ class VersaDemo {
         box: Box2D.toFlatArray(this.screenBuffer.bounds),
         img: this.screenBuffer.fbo,
         target: null,
-        view: Box2D.toFlatArray(this.camera.view),
+        view: Box2D.toFlatArray(this.upsideDown(this.camera.view)),
       },
     ]);
 
@@ -321,15 +371,15 @@ class VersaDemo {
           drawAgain = true;
         }
       });
-      const highlight = new ImVec4(0, 0.25, 0.65, 1.0)
-      const regular = new ImVec4(0.2, 0.2, 0.2, 1.0)
+      const highlight = new ImVec4(0, 0.25, 0.65, 1.0);
+      const regular = new ImVec4(0.2, 0.2, 0.2, 1.0);
       for (const thumb of this.sliceThumbs) {
         if (
           // here we dig deep into the guts of a regl-managed texture... not super safe, and regl's types are not really set up for this:
           ImGui.ImageButton(
             // @ts-expect-error
             thumb?.color[0]?._texture?.texture ?? null,
-            new ImVec2(THUMB_SIZE, THUMB_SIZE),
+            new ImVec2(this.thumbWidth, THUMB_SIZE),
             new ImVec2(0, 0),
             new ImVec2(1, 1),
             // draw a little box around the selected slice:
@@ -381,7 +431,7 @@ class VersaDemo {
   }
   setSlice(sliceIndex: number) {
     this.sliceIndex = sliceIndex;
-    this.rerender();
+    // this.rerender();
   }
   // changeGamut(delta: number) {
   //   this.gamut = { min: this.gamut.min, max: this.gamut.max * delta };
@@ -418,7 +468,7 @@ function setupEventHandlers(canvas: HTMLCanvasElement, demo: VersaDemo) {
   canvas.onmousemove = (e: MouseEvent) => {
     if (ImGui.GetIO().WantCaptureMouse) return;
     // account for gl-origin vs. screen origin:
-    demo.mouseMove([-e.movementX, e.movementY]);
+    demo.mouseMove([-e.movementX, -e.movementY]);
   };
   canvas.onwheel = (e: WheelEvent) => {
     if (ImGui.GetIO().WantCaptureMouse) return;

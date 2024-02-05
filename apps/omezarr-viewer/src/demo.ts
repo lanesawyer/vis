@@ -16,13 +16,14 @@ import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
 import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
 import { partial } from "lodash";
+import { HTTPStore, openArray } from "zarr";
 
 const tissuecyte = "https://tissuecyte-visualizations.s3.amazonaws.com/data/230105/tissuecyte/1111175209/green/";
 const versa = "https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/";
 
 const creepy =
   "https://aind-open-data.s3.amazonaws.com/SmartSPIM_644106_2022-12-09_12-12-39_stitched_2022-12-16_16-55-11/processed/OMEZarr/Ex_488_Em_525.zarr";
-const file = creepy;
+const file = tissuecyte;
 function renderAFrame(
   regl: REGL.Regl,
   cache: AsyncDataCache<REGL.Texture2D>,
@@ -245,6 +246,12 @@ async function demotime() {
   const imageRenderer = buildImageRenderer(regl);
   const zarr = await load(file);
   explain(zarr);
+  // tell me about chunks!
+  const what = zarr.multiscales[0].datasets[0];
+  openArray();
+  const store = new HTTPStore(zarr.url);
+  const arr = await openArray({ store, path: what.path, mode: "r" });
+  console.log("chunking: ", arr.chunks);
   regl.clear({ color: [0, 0, 0, 1], depth: 1 });
   canvas.tabIndex = 3; // get keyboard events please
   const renderPlease = (demo: Demo) => {

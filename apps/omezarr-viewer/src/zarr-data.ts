@@ -1,5 +1,5 @@
 // lets make some easy to understand utils to access .zarr data stored in an s3 bucket somewhere
-import { Box2D, Interval, box2D, limit } from "@aibs-vis/geometry";
+import { Box2D, Interval, box2D, limit, Box3D, box3D } from "@aibs-vis/geometry";
 import { HTTPStore, NestedArray, TypedArray, openArray, openGroup, slice } from "zarr";
 import { some } from "lodash";
 import { Vec2, vec2 } from "~/node_modules/@aibs-vis/geometry/lib/vec2";
@@ -41,6 +41,48 @@ type ZarrAttr = {
 type ZarrAttrs = {
   multiscales: ReadonlyArray<ZarrAttr>;
 };
+
+// function getSpatialDimensionShape(dataset: DatasetWithShape, axes: readonly AxisDesc[]) {
+//   const dims = axes.reduce(
+//     (shape, ax, i) => (ax.type === "spatial" ? { ...shape, [ax.name]: dataset.shape[i] } : shape),
+//     {} as Record<string, number>
+//   );
+//   return dims;
+// }
+// function getSpatialOrdering
+// function getBoundsInMillimeters(data: ZarrDataset) {
+//   if (data.multiscales.length !== 1) {
+//     throw new Error("cant support multi-scene zarr file...");
+//   }
+//   const scene = data.multiscales[0];
+//   const { axes, datasets } = scene;
+//   if (datasets.length < 1) {
+//     throw new Error("malformed dataset - no voxels!");
+//   }
+//   const dataset = datasets[0];
+//   const spatialResolution = getSpatialDimensionShape(dataset, axes);
+//   // apply transforms
+//   dataset.coordinateTransformations.forEach((trn) => {});
+//   const dimensions = getNumVoxelsInXYZ(getXYZIndexing(axes), dataset.shape);
+
+//   let bounds: box3D = Box3D.create([0, 0, 0], dimensions);
+//   dataset.coordinateTransformations.forEach((trn) => {
+//     // specification for coordinate transforms given here: https://ngff.openmicroscopy.org/latest/#trafo-md
+//     // from the above doc, its not super clear if the given transformation is in the order of the axes metadata (https://ngff.openmicroscopy.org/latest/#axes-md)
+//     // or some other order
+//     // all files I've seen so far have both in xyz order, so its a bit ambiguous.
+//     if (isScaleTransform(trn) && trn.scale.length >= 3) {
+//       bounds = applyScaleToXYZBounds(bounds, trn, axes);
+//     } else {
+//       throw new Error(`unsupported coordinate transformation type - please implement`);
+//     }
+//   });
+//   // finally - convert whatever the axes units are to millimeters, or risk crashing into mars
+//   // get the units of each axis in xyz order...
+
+//   return Box3D.map(bounds, (corner) => unitsToMillimeters(corner, axes));
+// }
+
 async function getRawInfo(store: HTTPStore) {
   const group = await openGroup(store);
   // TODO HACK ALERT: I am once again doing the thing that I hate, in which I promise to my friend Typescript that
@@ -87,7 +129,7 @@ export function pickBestScale(
     u: OmeDimension;
     v: OmeDimension;
   },
-  relativeView: box2D, // a box in unit-space, relative to the dataset
+  relativeView: box2D, // a box in data-unit-space
   // in the plane given above
   displayResolution: vec2
 ) {
@@ -110,6 +152,30 @@ export function pickBestScale(
 }
 function indexFor(dim: OmeDimension, axes: readonly AxisDesc[]) {
   return axes.findIndex((axe) => axe.name === dim);
+}
+export function sizeInUnits(
+  plane: {
+    u: OmeDimension;
+    v: OmeDimension;
+  },
+  axes: readonly AxisDesc[],
+  dataset: DatasetWithShape
+): vec2 | undefined {
+  const vxls = sizeInVoxels(plane, axes, dataset);
+
+  if (vxls === undefined) return undefined;
+  let size: vec2 = vxls;
+  // now, just apply the correct transforms, if they exist...
+
+  dataset.coordinateTransformations.forEach((trn) => {
+    if (isScaleTransform(trn)) {
+      // try to apply it!
+      const uIndex = indexOfDimension(axes, plane.u);
+      const vIndex = indexOfDimension(axes, plane.v);
+      size = Vec2.mul(size, [trn.scale[uIndex], trn.scale[vIndex]]);
+    }
+  });
+  return size;
 }
 export function sizeInVoxels(
   plane: {
@@ -161,8 +227,9 @@ export async function explain(z: ZarrDataset) {
     });
   }
 }
-export function indexOfDimension(data: ZarrDataset, dim: OmeDimension) {
-  return data.multiscales[0].axes.findIndex((ax) => ax.name === dim);
+
+export function indexOfDimension(axes: readonly AxisDesc[], dim: OmeDimension) {
+  return axes.findIndex((ax) => ax.name === dim);
 }
 export async function getSlice(metadata: ZarrDataset, r: ZarrRequest, layerIndex: number) {
   dieIfMalformed(r);

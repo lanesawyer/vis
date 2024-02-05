@@ -7,7 +7,7 @@ import {
   AxisAlignedPlane,
   VoxelSliceRenderSettings,
   VoxelTile,
-  buildImageRenderer,
+  buildVolumeSliceRenderer,
   cacheKeyFactory,
   getVisibleTiles,
   requestsForTile,
@@ -243,7 +243,7 @@ async function demotime() {
     height: canvas.clientHeight,
   };
   const voxelSliceCache: AsyncDataCache<REGL.Texture2D> = new AsyncDataCache<REGL.Texture2D>();
-  const imageRenderer = buildImageRenderer(regl);
+  const imageRenderer = buildVolumeSliceRenderer(regl);
   const zarr = await load(file);
   explain(zarr);
   // tell me about chunks!

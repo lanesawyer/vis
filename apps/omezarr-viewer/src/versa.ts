@@ -351,7 +351,7 @@ class VersaDemo {
       this.regl._gl.bindFramebuffer(this.regl._gl.FRAMEBUFFER, null);
       ImGui_Impl.NewFrame(time);
       ImGui.NewFrame();
-      ImGui.Begin("N E U R A L   G A Z E R");
+      ImGui.Begin("Settings");
 
       // TODO: count the available channels that we could use for color!
       Object.entries(this.channels).forEach(([channel, settings]) => {

@@ -33,6 +33,7 @@
     "typecheck": "tsc --noEmit",
     "demo": "esbuild src/demo.ts --bundle --outfile=dst/demo.js && cp public/* dst/",
     "versa": "esbuild src/versa.ts --bundle --outfile=dst/versa.js && cp public/* dst/",
+    "tissuecyte": "esbuild src/tissuecyte.ts --bundle --outfile=dst/tissuecyte.js && cp public/* dst/",
     "test": "jest --config=jest.config.cjs --watch"
   },
   "devDependencies": {

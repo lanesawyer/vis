@@ -1,6 +1,6 @@
 // an IM-gui widget for controlling the display of a single channel
 
-import { Interval } from "@aibs-vis/geometry";
+import { Interval } from "@vis/geometry";
 import { ImGui } from "@zhobo63/imgui-ts";
 import { ImTuple2 } from "@zhobo63/imgui-ts/src/bind-imgui";
 import { ImGuiColorEditFlags, ImGuiSliderFlags, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";

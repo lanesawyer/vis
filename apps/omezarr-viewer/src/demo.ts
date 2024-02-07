@@ -2,7 +2,7 @@
 import { ImGui, ImGui_Impl } from "@zhobo63/imgui-ts";
 import REGL from "regl";
 import { ZarrDataset, explain, load } from "./zarr-data";
-import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
+import { AsyncDataCache, beginLongRunningFrame } from "@vis/scatterbrain";
 import {
   AxisAlignedPlane,
   VoxelSliceRenderSettings,
@@ -12,8 +12,8 @@ import {
   getVisibleTiles,
   requestsForTile,
 } from "./slice-renderer";
-import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
-import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
+import { Box2D, Interval, Vec2, box2D, vec2 } from "@vis/geometry";
+import { FrameLifecycle } from "@vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
 import { partial } from "lodash";
 import { HTTPStore, openArray } from "zarr";

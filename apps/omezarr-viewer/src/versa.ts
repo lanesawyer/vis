@@ -11,7 +11,7 @@ import {
   sizeInUnits,
   sizeInVoxels,
 } from "./zarr-data";
-import { AsyncDataCache, beginLongRunningFrame } from "@aibs-vis/scatterbrain";
+import { AsyncDataCache, beginLongRunningFrame } from "@vis/scatterbrain";
 import {
   AxisAlignedPlane,
   VoxelSliceRenderSettings,
@@ -21,8 +21,8 @@ import {
   getVisibleTiles,
   requestsForTile,
 } from "./versa-renderer";
-import { Box2D, Interval, Vec2, box2D, vec2 } from "@aibs-vis/geometry";
-import { FrameLifecycle } from "@aibs-vis/scatterbrain/lib/render-queue";
+import { Box2D, Interval, Vec2, box2D, vec2 } from "@vis/geometry";
+import { FrameLifecycle } from "@vis/scatterbrain/lib/render-queue";
 import { Camera } from "./camera";
 import { buildImageRenderer } from "./image-renderer";
 import { ImVec2, ImVec4 } from "@zhobo63/imgui-ts/src/imgui";

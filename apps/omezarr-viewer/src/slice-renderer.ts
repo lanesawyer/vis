@@ -8,7 +8,7 @@ import {
   sizeInUnits,
   sizeInVoxels,
 } from "./zarr-data";
-import { Box2D, Interval, Vec2, box2D, vec2, vec4 } from "@aibs-vis/geometry";
+import { Box2D, Interval, Vec2, box2D, vec2, vec4 } from "@vis/geometry";
 import { omit } from "lodash";
 import { Camera } from "./camera";
 

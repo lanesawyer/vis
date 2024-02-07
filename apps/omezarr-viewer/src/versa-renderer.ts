@@ -1,6 +1,6 @@
 import REGL, { Framebuffer2D } from "regl";
 import { ZarrDataset, ZarrRequest, getSlice, pickBestScale, sizeInUnits, sizeInVoxels } from "./zarr-data";
-import { Box2D, Interval, Vec2, box2D, vec2, vec4 } from "@aibs-vis/geometry";
+import { Box2D, Interval, Vec2, box2D, vec2, vec4 } from "@vis/geometry";
 import { omit, slice } from "lodash";
 import { Camera } from "./camera";
 import { NestedArray, TypedArray } from "zarr";
@@ -150,9 +150,8 @@ function toZarrRequest(tile: VoxelTile, channel: number): ZarrRequest {
   };
 }
 export function cacheKeyFactory(col: string, item: VoxelTile, settings: VoxelSliceRenderSettings) {
-  return `${settings.dataset.url}_${JSON.stringify(omit(item, "desiredResolution"))}_${col}_ch=${
-    settings.gamut[col as "R" | "G" | "B"].index
-  }`;
+  return `${settings.dataset.url}_${JSON.stringify(omit(item, "desiredResolution"))}_${col}_ch=${settings.gamut[col as "R" | "G" | "B"].index
+    }`;
 }
 const LUMINANCE = "luminance";
 export function requestsForTile(tile: VoxelTile, settings: VoxelSliceRenderSettings, signal?: AbortSignal) {

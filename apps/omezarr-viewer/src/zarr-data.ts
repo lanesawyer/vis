@@ -1,7 +1,7 @@
 // lets make some easy to understand utils to access .zarr data stored in an s3 bucket somewhere
-import { HTTPStore, NestedArray, TypedArray, openArray, openGroup, slice } from "zarr";
+import { HTTPStore, NestedArray, type TypedArray, openArray, openGroup, slice } from "zarr";
 import { some } from "lodash";
-import { Box2D, Interval, Vec2, box2D, limit, vec2 } from "@vis/geometry";
+import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from "@vis/geometry";
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:
 // https://ngff.openmicroscopy.org/latest/#multiscale-md

@@ -58,7 +58,7 @@ function renderIfCached<Column, Item, Settings>(
     abort: AbortSignal,
     render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
     requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
-    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string
+    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string,
 ): true | Record<string, () => Promise<Column>> {
     const requests = requestsForItem(item, settings, abort);
     const requestKeys = Object.keys(requests);
@@ -200,7 +200,8 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     requestsForItem: (item: Item, settings: Settings, signal?: AbortSignal) => Record<string, () => Promise<Column>>,
     render: (item: Item, settings: Settings, columns: Record<string, Column | undefined>) => void,
     lifecycleCallback: (event: { status: NormalStatus } | { status: 'error'; error: unknown }) => void,
-    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key
+    cacheKeyForRequest: (requestKey: string, item: Item, settings: Settings) => string = (key) => key,
+    queueTimeBudgetMS: number = queueProcessingIntervalMS/3
 ): FrameLifecycle {
     const abort = new AbortController();
     const reportNormalStatus = (status: NormalStatus) => {
@@ -208,8 +209,13 @@ export function beginLongRunningFrame<Column, Item, Settings>(
     };
     // all items that we cant finish synchronously go in this queue:
     const queue: Item[] = [];
+    // when starting a frame, we greedily attempt to render any tasks that are already in the cache
+    // however, if there is too much overhead (or too many tasks) we would risk hogging the main thread
+    // thus - obey the limit (its a soft limit)
+    const startTime = performance.now();
 
-    items.forEach((item) => {
+    for(let i = 0;i<items.length;i+=1){
+        const item = items[i];
         if (
             // note: explicit check for true here is important - this function is kinda weird and gross, and either returns true | record<string,promises> which would be 'truthy'
             renderIfCached(mutableCache, item, settings, abort.signal, render, requestsForItem, cacheKeyForRequest) !==
@@ -217,7 +223,14 @@ export function beginLongRunningFrame<Column, Item, Settings>(
         ) {
             queue.push(item);
         } // else its already rendered!
-    });
+        if(performance.now()-startTime > queueTimeBudgetMS){
+            // we've used up all our time - enqueue all remaining tasks
+            if(i < items.length-1){
+                queue.push(...items.slice(i+1));
+            }
+            break;
+        }
+    }
 
     if (queue.length === 0) {
         // we did all the work - it was already cached
@@ -237,6 +250,7 @@ export function beginLongRunningFrame<Column, Item, Settings>(
 
     const doWorkOnQueue = (intervalId: number) => {
         // try our best to cleanup if something goes awry
+        const startWorkTime = performance.now();
         const cleanupOnError = (err: unknown) => {
             // clear the queue and the staging area (inFlight)
             inFlight.clear();
@@ -288,6 +302,10 @@ export function beginLongRunningFrame<Column, Item, Settings>(
                 // we can go ahead pop another item from the queue and start it
             } catch (err) {
                 cleanupOnError(err);
+            }
+            if(performance.now() - startWorkTime > queueTimeBudgetMS){
+                // used up all our time - leave remaining work for later
+                break;
             }
         }
     };

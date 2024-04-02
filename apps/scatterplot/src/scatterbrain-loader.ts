@@ -1,5 +1,4 @@
-import { Vec3, type box, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
-import { Box3D, type box3D } from "@alleninstitute/vis-geometry/lib/box3D";
+import { Box3D, Vec3, type box, type box3D, type vec2, type vec3 } from "@alleninstitute/vis-geometry";
 import { MakeTaggedBufferView, type TaggedTypedArray, type WebGLSafeBasicType } from "./typed-array";
 
 type volumeBound = {
@@ -176,11 +175,11 @@ export async function fetchColumn(
     const getGeneUrl = (columnName: string) =>
         `${dataset.geneUrl}${columnName}/${referenceIdForEmbedding}/${node.name}.bin`;
     if (column.type === 'QUANTITATIVE') {
-        const buff = await fetch(getGeneUrl(column.name), { signal }).then((resp) => resp.arrayBuffer());
+        const buff = await fetch(getGeneUrl(column.name), { signal:signal??null }).then((resp) => resp.arrayBuffer());
         return { ...MakeTaggedBufferView('float', buff), elements: 1 };
     }
     const info = dataset.columnInfo[column.name];
-    const buff = await fetch(getColumnUrl(column.name), { signal }).then((resp) => resp.arrayBuffer());
+    const buff = await fetch(getColumnUrl(column.name), { signal:signal ??null }).then((resp) => resp.arrayBuffer());
 
     return { ...MakeTaggedBufferView(info.type, buff), elements: info.elements };
 }

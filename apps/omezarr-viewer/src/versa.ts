@@ -11,7 +11,7 @@ import {
   sizeInUnits,
   sizeInVoxels,
 } from "./zarr-data";
-import { AsyncDataCache, FrameLifecycle, beginLongRunningFrame } from "@alleninstitute/vis-scatterbrain";
+import { AsyncDataCache, type FrameLifecycle, beginLongRunningFrame } from "@alleninstitute/vis-scatterbrain";
 import {
   type AxisAlignedPlane,
   type VoxelSliceRenderSettings,
@@ -48,7 +48,7 @@ class VersaDemo {
   canvas: HTMLCanvasElement;
   curFrame: FrameLifecycle | null;
   rotation: number;
-  cache: AsyncDataCache<REGL.Texture2D>;
+  cache: AsyncDataCache<string, string, REGL.Texture2D>;
   regl: REGL.Regl;
   dataset: ZarrDataset;
   screenRenderer: ReturnType<typeof buildImageRenderer>;
@@ -61,13 +61,14 @@ class VersaDemo {
     canvas: HTMLCanvasElement,
     dataset: ZarrDataset,
     regl: REGL.Regl,
-    cache: AsyncDataCache<REGL.Texture2D>,
+    cache: AsyncDataCache<string, string, REGL.Texture2D>,
     urls: string[]
   ) {
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
     this.datasets = urls;
+    const baseSize = sizeInUnits({ u: 'x', v: 'y' }, dataset.multiscales[0].axes, dataset.multiscales[0].datasets[0]) ?? [10, 10]
     this.camera = {
-      view: Box2D.create([0, 0], [(10 * w) / h, 10]),
+      view: Box2D.create([0, 0], [(baseSize[1] * w) / h, baseSize[1]]),
       screen: [w, h],
     };
     this.screenBuffer = { bounds: this.camera.view, fbo: regl.framebuffer(w, h) };
@@ -520,7 +521,9 @@ async function demotime() {
   });
   const canvas: HTMLCanvasElement = regl._gl.canvas as HTMLCanvasElement;
   setupGui(gl);
-  const voxelSliceCache: AsyncDataCache<REGL.Texture2D> = new AsyncDataCache<REGL.Texture2D>();
+  const voxelSliceCache: AsyncDataCache<string, string, REGL.Texture2D> = new AsyncDataCache<string, string, REGL.Texture2D>((d: REGL.Texture2D) => {
+    d.destroy()
+  }, (_d) => 1, 200);
   const zarr = await load(file);
   explain(zarr);
 

@@ -1,5 +1,6 @@
-import { useContext, useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import {
+    buildDziRenderer,
     type DziImage,
     type DziRenderSettings,
     type DziTile,
@@ -21,22 +22,6 @@ type Props = {
     onMouseMove?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseLeave?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
 } & DziRenderSettings;
-
-function buildCompositor(svg: HTMLImageElement, settings: DziRenderSettings) {
-    return (ctx: CanvasRenderingContext2D, image: ImageData) => {
-        const { width, height } = svg;
-        const { camera } = settings;
-        const svgSize: vec2 = [width, height];
-        const start = Vec2.mul(camera.view.minCorner, svgSize);
-        const wh = Vec2.sub(Vec2.mul(camera.view.maxCorner, svgSize), start);
-        const [sx, sy] = start;
-        const [sw, sh] = wh;
-        // first, draw the results from webGL
-        ctx.putImageData(image, 0, 0);
-        // then add our svg overlay
-        ctx.drawImage(svg, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
-    };
-}
 
 export function DziViewer(props: Props) {
     const { svgOverlay, camera, dzi, onWheel, id, onMouseDown, onMouseUp, onMouseMove, onMouseLeave } = props;
@@ -62,6 +47,22 @@ export function DziViewer(props: Props) {
     }, [server]);
 
     useEffect(() => {
+        const compose = (ctx: CanvasRenderingContext2D, image: ImageData) => {
+            // first, draw the results from webGL
+            ctx.putImageData(image, 0, 0);
+
+            if (svgOverlay) {
+                // then add our svg overlay
+                const { width, height } = svgOverlay;
+                const svgSize: vec2 = [width, height];
+                const start = Vec2.mul(camera.view.minCorner, svgSize);
+                const wh = Vec2.sub(Vec2.mul(camera.view.maxCorner, svgSize), start);
+                const [sx, sy] = start;
+                const [sw, sh] = wh;
+                ctx.drawImage(svgOverlay, sx, sy, sw, sh, 0, 0, ctx.canvas.width, ctx.canvas.height);
+            }
+        };
+
         if (server && renderer.current && cnvs.current) {
             const renderMyData: RenderFrameFn<DziImage, DziTile> = (target, cache, callback) => {
                 if (renderer.current) {
@@ -70,24 +71,13 @@ export function DziViewer(props: Props) {
                 }
                 return null;
             };
-            const compose = buildCompositor(svgOverlay, { camera });
             server.beginRendering(
                 renderMyData,
                 (e) => {
-                    switch (e.status) {
-                        case 'begin':
-                            server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
-                            break;
-                        case 'progress':
-                            // wanna see the tiles as they arrive?
-                            e.server.copyToClient(compose);
-                            break;
-                        case 'finished': {
-                            e.server.copyToClient(compose);
-                            break;
-                        }
-                        default:
-                            break;
+                    if (e.status == 'begin') {
+                        server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
+                    } else if (e.status == 'progress' || e.status == 'finished') {
+                        e.server.copyToClient(compose);
                     }
                 },
                 cnvs.current

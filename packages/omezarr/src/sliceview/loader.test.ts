@@ -1,6 +1,6 @@
-import { sizeInUnits, type ZarrDataset } from '../zarr-data';
+import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
 import { describe, expect, it } from 'vitest';
-import { Box2D, box2D } from '@alleninstitute/vis-geometry';
+import { type ZarrDataset, sizeInUnits } from '../zarr-data';
 import { getVisibleTiles } from './loader';
 const exampleOmeZarr: ZarrDataset = {
     url: 'https://allen-genetic-tools.s3.us-west-2.amazonaws.com/tissuecyte/1263343692/ome-zarr/',

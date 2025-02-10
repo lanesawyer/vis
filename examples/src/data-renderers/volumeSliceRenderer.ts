@@ -1,11 +1,8 @@
+import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-scatterbrain';
 import type REGL from 'regl';
-import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
 import type { RenderCallback } from './types';
 
-import { applyOptionalTrn } from './utils';
 import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
-import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
-import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
 import {
     pickBestScale,
     sizeInUnits,
@@ -13,16 +10,19 @@ import {
     sliceDimensionForPlane,
     uvForPlane,
 } from '@alleninstitute/vis-omezarr';
+import type { Camera } from '~/common/camera';
+import type { AxisAlignedZarrSlice } from '../data-sources/ome-zarr/planar-slice';
+import type { AxisAlignedZarrSliceGrid } from '../data-sources/ome-zarr/slice-grid';
+import { applyOptionalTrn } from './utils';
 import {
+    type AxisAlignedPlane,
+    type VoxelSliceRenderSettings,
+    type VoxelTile,
+    type buildVersaRenderer,
     cacheKeyFactory,
     getVisibleTiles,
     requestsForTile,
-    type AxisAlignedPlane,
-    type buildVersaRenderer,
-    type VoxelSliceRenderSettings,
-    type VoxelTile,
 } from './versa-renderer';
-import type { Camera } from '~/common/camera';
 
 type Renderer = ReturnType<typeof buildVersaRenderer>;
 type CacheContentType = { type: 'texture2D'; data: REGL.Texture2D };
@@ -113,7 +113,7 @@ export function renderGrid<C extends CacheContentType | object>(
     for (let i = 0; i < slices; i++) {
         const gridIndex: vec2 = [i % rowSize, Math.floor(i / rowSize)];
 
-        let param = i / slices;
+        const param = i / slices;
         const slice: AxisAlignedZarrSlice = {
             ...grid,
             type: 'AxisAlignedZarrSlice',

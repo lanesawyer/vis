@@ -1,9 +1,9 @@
-// a helper to render a 2D layer, using regl
-import type { Image, ImageRenderer, RenderFn } from './types';
-import { type BufferPair, swapBuffers } from './buffer-pair';
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import type REGL from 'regl';
 import type { FrameLifecycle, RenderCallback } from '../render-queue';
-import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { type BufferPair, swapBuffers } from './buffer-pair';
+// a helper to render a 2D layer, using regl
+import type { Image, ImageRenderer, RenderFn } from './types';
 
 type EventType = Parameters<RenderCallback>[0];
 type RequiredSettings = { camera: { view: box2D }; callback: RenderCallback };
@@ -54,7 +54,7 @@ export class ReglLayer2D<Renderable, RenderSettings extends RequiredSettings> {
             readonly data: Readonly<Renderable>;
             readonly settings: Readonly<RenderSettings>;
         },
-        cancel: boolean = true,
+        cancel = true,
     ) {
         if (cancel && this.runningFrame) {
             this.runningFrame.cancelFrame();

@@ -1,14 +1,14 @@
-import REGL from 'regl';
 import { Box2D, type Interval, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
-    type Renderer,
-    type ReglCacheEntry,
     type CachedTexture,
+    type ReglCacheEntry,
+    type Renderer,
     buildAsyncRenderer,
 } from '@alleninstitute/vis-scatterbrain';
+import type REGL from 'regl';
 import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
-import { buildTileRenderer } from './tile-renderer';
 import { type VoxelTile, getVisibleTiles } from './loader';
+import { buildTileRenderer } from './tile-renderer';
 
 type RenderSettings = {
     camera: {

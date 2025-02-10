@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import delay from 'lodash/delay';
-import { beginLongRunningFrame, type NormalStatus } from '../render-queue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AsyncDataCache } from '../dataset-cache';
+import { type NormalStatus, beginLongRunningFrame } from '../render-queue';
 import { fakeFetch } from './test-utils';
 
 type FakeTask = { id: number; color: string };

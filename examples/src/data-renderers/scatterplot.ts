@@ -1,7 +1,8 @@
-import REGL, { type Framebuffer2D } from 'regl';
 import { Box2D, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
-import type { ColumnarTree, ColumnBuffer } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type REGL from 'regl';
+import type { Framebuffer2D } from 'regl';
 import type { RenderSettings } from '~/common/loaders/scatterplot/data';
+import type { ColumnBuffer, ColumnarTree } from '~/common/loaders/scatterplot/scatterbrain-loader';
 
 type Props = {
     view: vec4;

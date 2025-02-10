@@ -1,4 +1,4 @@
-import { type vec2, type box2D, Box2D, type Interval, Vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 
 type DziTilesRoot = `${string}_files/`;
 // see https://learn.microsoft.com/en-us/previous-versions/windows/silverlight/dotnet-windows-silverlight/cc645077(v=vs.95)?redirectedfrom=MSDN

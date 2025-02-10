@@ -1,15 +1,14 @@
-import React from 'react';
+import type { box2D, vec2 } from '@alleninstitute/vis-geometry';
 import {
-    buildAsyncOmezarrRenderer,
-    type ZarrDataset,
-    type VoxelTile,
-    defaultDecoder,
-    type RenderSettings,
     type OmeZarrDataset,
+    type RenderSettings,
+    type VoxelTile,
+    type ZarrDataset,
+    buildAsyncOmezarrRenderer,
+    defaultDecoder,
 } from '@alleninstitute/vis-omezarr';
-import { type RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
+import type { RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
 import { useContext, useEffect, useRef } from 'react';
-import type { vec2, box2D } from '@alleninstitute/vis-geometry';
 import { renderServerContext } from '~/common/react/render-server-provider';
 
 interface OmezarrViewerProps {
@@ -50,7 +49,7 @@ export function OmezarrViewer({
     // setup renderer and delete it when component goes away
     useEffect(() => {
         const c = canvas?.current;
-        if (server && server.regl) {
+        if (server?.regl) {
             renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
         }
         return () => {
@@ -97,7 +96,7 @@ export function OmezarrViewer({
                 canvas.current,
             );
         }
-    }, [server, renderer, canvas, omezarr, settings]);
+    }, [server, omezarr, settings]);
 
     // wheel event needs to be active for control + wheel zoom to work
     useEffect(() => {

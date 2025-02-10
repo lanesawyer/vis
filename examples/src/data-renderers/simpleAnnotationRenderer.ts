@@ -1,12 +1,12 @@
-import type REGL from 'regl';
-import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
-import type { RenderCallback } from './types';
 import { Box2D, type box2D } from '@alleninstitute/vis-geometry';
-import type { Path, buildPathRenderer } from './lineRenderer';
+import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-scatterbrain';
 import { flatten } from 'lodash';
-import type { OptionalTransform } from '../data-sources/types';
+import type REGL from 'regl';
 import type { Camera } from '~/common/camera';
 import type { ColumnData } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type { OptionalTransform } from '../data-sources/types';
+import type { Path, buildPathRenderer } from './lineRenderer';
+import type { RenderCallback } from './types';
 
 type Renderer = ReturnType<typeof buildPathRenderer>;
 

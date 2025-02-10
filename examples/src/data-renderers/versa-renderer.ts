@@ -1,15 +1,16 @@
-import REGL, { type Framebuffer2D } from 'regl';
 import { Box2D, type Interval, Vec2, type box2D, type vec2, type vec4 } from '@alleninstitute/vis-geometry';
-import { omit } from 'lodash';
 import {
+    type ZarrDataset,
+    type ZarrRequest,
     pickBestScale,
     planeSizeInVoxels,
     sizeInUnits,
-    type ZarrDataset,
-    type ZarrRequest,
 } from '@alleninstitute/vis-omezarr';
-import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
+import { omit } from 'lodash';
+import type REGL from 'regl';
+import type { Framebuffer2D } from 'regl';
 import type { Camera } from '~/common/camera';
+import { getSlicePool } from '~/common/loaders/ome-zarr/sliceWorkerPool';
 
 const TILE_SIZE = 256;
 

@@ -1,6 +1,6 @@
 import { BoxClassFactory, type box } from './BoundingBox';
 import type { vec2 } from './vec2';
-import { type vec3, Vec3 } from './vec3';
+import { Vec3, type vec3 } from './vec3';
 
 const isBox3D = (maybe: unknown): maybe is box3D => {
     if (typeof maybe === 'object' && maybe !== null && 'minCorner' in maybe && 'maxCorner' in maybe) {

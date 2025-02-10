@@ -205,7 +205,7 @@ export class AsyncDataCache<SemanticKey extends RecordKey, CacheKey extends Reco
     }
     private prepareCache(semanticKey: SemanticKey, cacheKey: CacheKey, getter: () => Promise<D>) {
         let promise: Promise<D>;
-        let entry = this.entries.get(cacheKey);
+        const entry = this.entries.get(cacheKey);
         const data = entry?.data;
         // we either return early (data is cached)
         // or we initialize promise (either getter() or a pre-existing request for the same cachekey)

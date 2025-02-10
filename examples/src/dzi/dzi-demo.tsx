@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { RenderServerProvider } from '../common/react/render-server-provider';
-import React from 'react';
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
-import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
-import { DziViewer } from './dzi-viewer';
+import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import { pan, zoom } from '~/common/camera';
+import { RenderServerProvider } from '../common/react/render-server-provider';
+import { DziViewer } from './dzi-viewer';
 
 // We know the sizes and formats ahead of time for these examples,
 // if you'd like to see how to get this data from an endpoint with a dzi file check out use-dzi-image.ts
@@ -90,7 +90,7 @@ export function DziDemo() {
             <p>Scroll below to view image</p>
             <div style={{ display: 'flex', flexDirection: 'row' }}>
                 {images.map((v) => (
-                    <div style={{ width: screenSize[0], height: screenSize[1] }}>
+                    <div key={v.imagesUrl} style={{ width: screenSize[0], height: screenSize[1] }}>
                         <DziViewer
                             id={v.imagesUrl}
                             dzi={v}

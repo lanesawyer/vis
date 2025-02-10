@@ -1,6 +1,6 @@
 import { Box2D, Box3D, Vec3, type box, type box3D, type vec2, type vec3 } from '@alleninstitute/vis-geometry';
-import { MakeTaggedBufferView, type TaggedTypedArray, type WebGLSafeBasicType } from '../../typed-array';
 import type REGL from 'regl';
+import { MakeTaggedBufferView, type TaggedTypedArray, type WebGLSafeBasicType } from '../../typed-array';
 
 type volumeBound = {
     lx: number;

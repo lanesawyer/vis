@@ -1,4 +1,4 @@
-import { type box2D, type vec2, Box2D, Vec2, Vec4 } from '@alleninstitute/vis-geometry';
+import { Box2D, Vec2, Vec4, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import type { Annotation, Path, PathCommand } from './annotation-schema-type';
 import type { AnnotationMesh, AnnotationPolygon, ClosedLoop } from './types';
 // a helper function, which does a first path over commands, grouping them into closed loops

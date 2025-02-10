@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { RenderServerProvider } from '~/common/react/render-server-provider';
-import { SliceView } from './sliceview';
+import { Box2D, type Interval, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { type OmeZarrDataset, loadOmeZarr, sizeInUnits } from '@alleninstitute/vis-omezarr';
-import { OmezarrViewer } from './omezarr-viewer';
-import { type RenderSettings } from '@alleninstitute/vis-omezarr';
-import { Box2D, Vec2, type box2D, type Interval, type vec2 } from '@alleninstitute/vis-geometry';
+import type { RenderSettings } from '@alleninstitute/vis-omezarr';
+import { useEffect, useMemo, useState } from 'react';
 import { pan, zoom } from '~/common/camera';
+import { RenderServerProvider } from '~/common/react/render-server-provider';
+import { OmezarrViewer } from './omezarr-viewer';
+import { SliceView } from './sliceview';
 
 const demo_versa = 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/';
 
@@ -81,8 +81,12 @@ export function OmezarrDemo() {
             {omezarr && settings ? (
                 <>
                     <div>
-                        <button onClick={() => handlePlaneIndex(-1)}>{'<-'}</button>
-                        <button onClick={() => handlePlaneIndex(1)}>{'->'}</button>
+                        <button type="button" onClick={() => handlePlaneIndex(-1)}>
+                            {'<-'}
+                        </button>
+                        <button type="button" onClick={() => handlePlaneIndex(1)}>
+                            {'->'}
+                        </button>
                     </div>
                     <OmezarrViewer
                         omezarr={omezarr}

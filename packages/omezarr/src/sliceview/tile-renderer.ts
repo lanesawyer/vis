@@ -3,7 +3,8 @@
 // the channels may be mapped to color-channels (RGB) with a basic 2-post gamut control
 
 import type { vec2, vec4 } from '@alleninstitute/vis-geometry';
-import REGL, { type Framebuffer2D } from 'regl';
+import type REGL from 'regl';
+import type { Framebuffer2D } from 'regl';
 
 type Props = {
     target: Framebuffer2D | null;

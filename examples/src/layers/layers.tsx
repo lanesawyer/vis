@@ -1,10 +1,10 @@
+import { Button } from '@czi-sds/components';
 import React from 'react';
-import { SliceViewLayer } from '../ui/slice-ui';
 import type { Demo } from '../layers';
 import { AnnotationGrid } from '../ui/annotation-grid';
 import { ContactSheetUI } from '../ui/contact-sheet';
 import { ScatterplotUI } from '../ui/scatterplot-ui';
-import { Button } from '@czi-sds/components';
+import { SliceViewLayer } from '../ui/slice-ui';
 
 export function AppUi(props: { demo: Demo }) {
     const { demo } = props;

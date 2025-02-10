@@ -1,8 +1,8 @@
 import { Box2D, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import {
-    type Renderer,
-    type ReglCacheEntry,
     type CachedTexture,
+    type ReglCacheEntry,
+    type Renderer,
     buildAsyncRenderer,
 } from '@alleninstitute/vis-scatterbrain';
 import type REGL from 'regl';
@@ -68,7 +68,7 @@ export function buildDziRenderer(regl: REGL.Regl): Renderer<DziImage, DziTile, R
             return getVisibleTiles(dzi, settings.camera);
         },
         isPrepared: (cacheData): cacheData is GpuProps => {
-            const pixels = cacheData['pixels'];
+            const pixels = cacheData.pixels;
             return !!pixels && pixels.type === 'texture';
         },
         renderItem: (target, tile, _dzi, settings, gpuData) => {

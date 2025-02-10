@@ -1,6 +1,6 @@
+import { describe, expect, test } from 'vitest';
 import { Box2D } from '../box2D';
 import { Vec2 } from '../vec2';
-import { describe, expect, test } from 'vitest';
 describe('box2D', () => {
     // Basic box to use throughout the tests
     const box = Box2D.create([1, 2], [3, 4]);
@@ -32,10 +32,10 @@ describe('box2D', () => {
         const validBox = Box2D.isValid(box);
         expect(validBox).toBeTruthy();
 
-        const nanBox = Box2D.isValid(Box2D.create([NaN, NaN], [1, 1]));
+        const nanBox = Box2D.isValid(Box2D.create([Number.NaN, Number.NaN], [1, 1]));
         expect(nanBox).toBeFalsy();
 
-        const infinityBox = Box2D.isValid(Box2D.create([Infinity, Infinity], [1, 1]));
+        const infinityBox = Box2D.isValid(Box2D.create([Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY], [1, 1]));
         expect(infinityBox).toBeFalsy();
 
         const noAreaPointBox = Box2D.isValid(Box2D.create([0, 0], [0, 0]));

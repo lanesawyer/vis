@@ -1,7 +1,7 @@
 import { partial } from 'lodash';
-import { AsyncDataCache } from '../dataset-cache';
-import type { ReglCacheEntry, Renderer } from './types';
 import type REGL from 'regl';
+import type { AsyncDataCache } from '../dataset-cache';
+import type { ReglCacheEntry, Renderer } from './types';
 
 /// THIS file is a copy of render-queue, but with some changes made that I hope will make the idea of beginLongRunningFrame easier to use ///
 // TODO: delete (or make deprecated) the old one
@@ -113,7 +113,7 @@ export function beginFrame<
         }
     };
 
-    const doWorkOnQueue = (intervalId: number, synchronous: boolean = false) => {
+    const doWorkOnQueue = (intervalId: number, synchronous = false) => {
         // try our best to cleanup if something goes awry
         const startWorkTime = performance.now();
         const cleanupOnError = (err: unknown) => {

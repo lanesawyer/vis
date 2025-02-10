@@ -1,56 +1,56 @@
 import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { sizeInUnits } from '@alleninstitute/vis-omezarr';
+import { AsyncDataCache, type FrameLifecycle, type NormalStatus, ReglLayer2D } from '@alleninstitute/vis-scatterbrain';
+import { saveAs } from 'file-saver';
+import { createRoot } from 'react-dom/client';
 import REGL from 'regl';
-import { AsyncDataCache, ReglLayer2D, type FrameLifecycle, type NormalStatus } from '@alleninstitute/vis-scatterbrain';
+import type { Camera } from './common/camera';
+import { buildImageRenderer } from './common/image-renderer';
+import type { ColumnRequest } from './common/loaders/scatterplot/scatterbrain-loader';
 import {
+    type RenderSettings as AnnotationGridRenderSettings,
+    type LoopRenderer,
+    type MeshRenderer,
+    renderAnnotationGrid,
+} from './data-renderers/annotation-renderer';
+import {
+    type RenderSettings as SlideRenderSettings,
     renderDynamicGrid,
     renderSlide,
-    type RenderSettings as SlideRenderSettings,
 } from './data-renderers/dynamicGridSlideRenderer';
+import { buildPathRenderer } from './data-renderers/lineRenderer';
+import { buildLoopRenderer, buildMeshRenderer } from './data-renderers/mesh-renderer';
+import { buildRenderer } from './data-renderers/scatterplot';
 import {
-    renderGrid,
-    renderSlice,
-    type RenderSettings as SliceRenderSettings,
-} from './data-renderers/volumeSliceRenderer';
-import {
-    renderAnnotationLayer,
     type RenderSettings as AnnotationRenderSettings,
     type SimpleAnnotation,
+    renderAnnotationLayer,
 } from './data-renderers/simpleAnnotationRenderer';
-import { buildPathRenderer } from './data-renderers/lineRenderer';
 import type { ColorMapping, RenderCallback } from './data-renderers/types';
-import { createZarrSlice, type AxisAlignedZarrSlice, type ZarrSliceConfig } from './data-sources/ome-zarr/planar-slice';
+import { type AxisAlignedPlane, buildVersaRenderer } from './data-renderers/versa-renderer';
 import {
-    createGridDataset,
-    createSlideDataset,
+    type RenderSettings as SliceRenderSettings,
+    renderGrid,
+    renderSlice,
+} from './data-renderers/volumeSliceRenderer';
+import type { AnnotationGrid, AnnotationGridConfig } from './data-sources/annotation/annotation-grid';
+import { type AxisAlignedZarrSlice, type ZarrSliceConfig, createZarrSlice } from './data-sources/ome-zarr/planar-slice';
+import {
+    type AxisAlignedZarrSliceGrid,
+    type ZarrSliceGridConfig,
+    createZarrSliceGrid,
+} from './data-sources/ome-zarr/slice-grid';
+import {
     type DynamicGrid,
     type DynamicGridSlide,
     type ScatterPlotGridSlideConfig,
     type ScatterplotGridConfig,
+    createGridDataset,
+    createSlideDataset,
 } from './data-sources/scatterplot/dynamic-grid';
 import type { OptionalTransform } from './data-sources/types';
-import type { CacheEntry, AnnotationLayer, Layer } from './types';
 import { AppUi } from './layers/layers';
-import { createRoot } from 'react-dom/client';
-import {
-    createZarrSliceGrid,
-    type AxisAlignedZarrSliceGrid,
-    type ZarrSliceGridConfig,
-} from './data-sources/ome-zarr/slice-grid';
-import {
-    renderAnnotationGrid,
-    type LoopRenderer,
-    type MeshRenderer,
-    type RenderSettings as AnnotationGridRenderSettings,
-} from './data-renderers/annotation-renderer';
-import { buildLoopRenderer, buildMeshRenderer } from './data-renderers/mesh-renderer';
-import { saveAs } from 'file-saver';
-import type { AnnotationGrid, AnnotationGridConfig } from './data-sources/annotation/annotation-grid';
-import { buildRenderer } from './data-renderers/scatterplot';
-import { sizeInUnits } from '@alleninstitute/vis-omezarr';
-import type { ColumnRequest } from './common/loaders/scatterplot/scatterbrain-loader';
-import { buildVersaRenderer, type AxisAlignedPlane } from './data-renderers/versa-renderer';
-import { buildImageRenderer } from './common/image-renderer';
-import type { Camera } from './common/camera';
+import type { AnnotationLayer, CacheEntry, Layer } from './types';
 const KB = 1000;
 const MB = 1000 * KB;
 
@@ -111,8 +111,8 @@ export class Demo {
     loopRenderer: LoopRenderer;
     meshRenderer: MeshRenderer;
     stencilMeshRenderer: MeshRenderer;
-    private refreshRequested: number = 0;
-    private redrawRequested: number = 0;
+    private refreshRequested = 0;
+    private redrawRequested = 0;
     constructor(canvas: HTMLCanvasElement, regl: REGL.Regl) {
         this.canvas = canvas;
         this.mouse = 'up';

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { tilesInLayer, type DziImage, tileWithOverlap, imageSizeAtLayer, firstSuitableLayer } from './loader';
 import { Box2D } from '@alleninstitute/vis-geometry';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type DziImage, firstSuitableLayer, imageSizeAtLayer, tileWithOverlap, tilesInLayer } from './loader';
 
 describe('tiling math', () => {
     const highsmith: DziImage = {

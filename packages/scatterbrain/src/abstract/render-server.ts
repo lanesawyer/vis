@@ -1,9 +1,9 @@
-import { AsyncDataCache } from '../dataset-cache';
-import type { ReglCacheEntry } from './types';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
 import REGL from 'regl';
-import { type AsyncFrameEvent, type RenderCallback } from './async-frame';
-import { type FrameLifecycle } from '../render-queue';
+import { AsyncDataCache } from '../dataset-cache';
+import type { FrameLifecycle } from '../render-queue';
+import type { AsyncFrameEvent, RenderCallback } from './async-frame';
+import type { ReglCacheEntry } from './types';
 
 function destroyer(item: ReglCacheEntry) {
     switch (item.type) {

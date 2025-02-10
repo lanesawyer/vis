@@ -1,13 +1,13 @@
-import { beginLongRunningFrame, type AsyncDataCache } from '@alleninstitute/vis-scatterbrain';
-import type REGL from 'regl';
-import { buildRenderer as buildScatterplotRenderer } from './scatterplot';
 import { Box2D, Vec2, type vec2 } from '@alleninstitute/vis-geometry';
-import { applyOptionalTrn } from './utils';
-import type { DynamicGrid, DynamicGridSlide } from '../data-sources/scatterplot/dynamic-grid';
-import type { RenderCallback } from './types';
-import { fetchItem, getVisibleItemsInSlide } from '~/common/loaders/scatterplot/data';
-import type { ColumnarTree, ColumnRequest } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import { type AsyncDataCache, beginLongRunningFrame } from '@alleninstitute/vis-scatterbrain';
+import type REGL from 'regl';
 import type { Camera } from '~/common/camera';
+import { fetchItem, getVisibleItemsInSlide } from '~/common/loaders/scatterplot/data';
+import type { ColumnRequest, ColumnarTree } from '~/common/loaders/scatterplot/scatterbrain-loader';
+import type { DynamicGrid, DynamicGridSlide } from '../data-sources/scatterplot/dynamic-grid';
+import type { buildRenderer as buildScatterplotRenderer } from './scatterplot';
+import type { RenderCallback } from './types';
+import { applyOptionalTrn } from './utils';
 type CacheContentType = {
     type: 'vbo';
     data: REGL.Buffer;

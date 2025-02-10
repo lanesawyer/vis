@@ -1,8 +1,8 @@
 import { Box2D, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import type { Chunk } from 'zarrita';
 import type { AxisAlignedPlane, ZarrDataset, ZarrRequest } from '../zarr-data';
 import { getSlice, pickBestScale, planeSizeInVoxels, sizeInUnits, uvForPlane } from '../zarr-data';
 import type { VoxelTileImage } from './slice-renderer';
-import type { Chunk } from 'zarrita';
 
 export type VoxelTile = {
     plane: AxisAlignedPlane; // the plane in which the tile sits

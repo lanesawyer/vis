@@ -1,16 +1,15 @@
-import { useContext, useEffect, useRef, useState } from 'react';
 import {
-    buildDziRenderer,
+    type GpuProps as CachedPixels,
     type DziImage,
     type DziRenderSettings,
     type DziTile,
-    type GpuProps as CachedPixels,
     buildAsyncDziRenderer,
+    buildDziRenderer,
 } from '@alleninstitute/vis-dzi';
-import { buildAsyncRenderer, type RenderFrameFn } from '@alleninstitute/vis-scatterbrain';
 import { Vec2, type vec2 } from '@alleninstitute/vis-geometry';
+import type { RenderFrameFn, buildAsyncRenderer } from '@alleninstitute/vis-scatterbrain';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { renderServerContext } from '~/common/react/render-server-provider';
-import React from 'react';
 
 type Props = {
     id: string;
@@ -36,7 +35,7 @@ export function DziViewer(props: Props) {
         >();
 
     useEffect(() => {
-        if (server && server.regl) {
+        if (server?.regl) {
             renderer.current = buildAsyncDziRenderer(server.regl);
         }
         return () => {
@@ -74,13 +73,13 @@ export function DziViewer(props: Props) {
             server.beginRendering(
                 renderMyData,
                 (e) => {
-                    if (e.status == 'begin') {
+                    if (e.status === 'begin') {
                         server.regl?.clear({
                             framebuffer: e.target,
                             color: [0, 0, 0, 0],
                             depth: 1,
                         });
-                    } else if (e.status == 'progress' || e.status == 'finished') {
+                    } else if (e.status === 'progress' || e.status === 'finished') {
                         e.server.copyToClient(compose);
                     }
                 },

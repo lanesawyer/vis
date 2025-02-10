@@ -1,5 +1,5 @@
 import { partial } from 'lodash';
-import { AsyncDataCache } from './dataset-cache';
+import type { AsyncDataCache } from './dataset-cache';
 
 /**
  * FrameLifecycle type that defines the functions a user can call to interact with the frame lifecycle.

@@ -1,6 +1,6 @@
-import * as zarr from 'zarrita';
-import { some } from 'lodash';
 import { Box2D, type Interval, Vec2, type box2D, limit, type vec2 } from '@alleninstitute/vis-geometry';
+import { some } from 'lodash';
+import * as zarr from 'zarrita';
 
 // documentation for ome-zarr datasets (from which these types are built)
 // can be found here:

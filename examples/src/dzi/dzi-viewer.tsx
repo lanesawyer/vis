@@ -75,12 +75,16 @@ export function DziViewer(props: Props) {
                 renderMyData,
                 (e) => {
                     if (e.status == 'begin') {
-                        server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
+                        server.regl?.clear({
+                            framebuffer: e.target,
+                            color: [0, 0, 0, 0],
+                            depth: 1,
+                        });
                     } else if (e.status == 'progress' || e.status == 'finished') {
                         e.server.copyToClient(compose);
                     }
                 },
-                cnvs.current
+                cnvs.current,
             );
         }
     }, [server, svgOverlay, dzi, camera]);

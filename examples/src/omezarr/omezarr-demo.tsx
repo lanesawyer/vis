@@ -35,7 +35,7 @@ export function OmezarrDemo() {
 
     const settings: RenderSettings | undefined = useMemo(
         () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex) : undefined),
-        [omezarr, view, planeIndex]
+        [omezarr, view, planeIndex],
     );
 
     useEffect(() => {

@@ -75,7 +75,11 @@ export function OmezarrViewer({
                 (e) => {
                     switch (e.status) {
                         case 'begin':
-                            server.regl?.clear({ framebuffer: e.target, color: [0, 0, 0, 0], depth: 1 });
+                            server.regl?.clear({
+                                framebuffer: e.target,
+                                color: [0, 0, 0, 0],
+                                depth: 1,
+                            });
                             break;
                         case 'progress':
                             // wanna see the tiles as they arrive?
@@ -90,7 +94,7 @@ export function OmezarrViewer({
                         }
                     }
                 },
-                canvas.current
+                canvas.current,
             );
         }
     }, [server, renderer, canvas, omezarr, settings]);

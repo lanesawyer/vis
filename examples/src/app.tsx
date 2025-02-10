@@ -8,18 +8,9 @@ export function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route
-                    index
-                    element={<Home />}
-                />
-                <Route
-                    path="/dzi"
-                    element={<DziDemo />}
-                />
-                <Route
-                    path="/omezarr"
-                    element={<OmezarrDemo />}
-                />
+                <Route index element={<Home />} />
+                <Route path="/dzi" element={<DziDemo />} />
+                <Route path="/omezarr" element={<OmezarrDemo />} />
                 <Route path="/layers" />
             </Routes>
         </BrowserRouter>

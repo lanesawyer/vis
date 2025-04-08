@@ -15,7 +15,7 @@ interface OmezarrViewerProps {
     id: string;
     screenSize: vec2;
     settings: RenderSettings;
-    onWheel?: (e: WheelEvent) => void;
+    onWheel?: (e: React.WheelEvent<HTMLCanvasElement>) => void;
     onMouseDown?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseUp?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseMove?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
@@ -49,7 +49,8 @@ export function OmezarrViewer({
     useEffect(() => {
         const c = canvas?.current;
         if (server?.regl && omezarr) {
-            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder);
+            const numChannels = omezarr.colorChannels.length || 3;
+            renderer.current = buildAsyncOmezarrRenderer(server.regl, defaultDecoder, { numChannels });
         }
         return () => {
             if (c) {
@@ -61,7 +62,7 @@ export function OmezarrViewer({
     // render frames
     useEffect(() => {
         if (server && renderer.current && canvas.current && omezarr) {
-            const hey: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
+            const renderFrame: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
                     return renderer.current(omezarr, settings, callback, target, cache);
                 }
@@ -69,7 +70,7 @@ export function OmezarrViewer({
             };
 
             server.beginRendering(
-                hey,
+                renderFrame,
                 (e) => {
                     switch (e.status) {
                         case 'begin':
@@ -97,20 +98,6 @@ export function OmezarrViewer({
         }
     }, [server, omezarr, settings]);
 
-    // wheel event needs to be active for control + wheel zoom to work
-    useEffect(() => {
-        const c = canvas.current;
-        const handleWheel = (e: WheelEvent) => onWheel?.(e);
-        if (c) {
-            c.addEventListener('wheel', handleWheel, { passive: false });
-        }
-        return () => {
-            if (c) {
-                c.removeEventListener('wheel', handleWheel);
-            }
-        };
-    });
-
     return (
         <canvas
             id={id}
@@ -121,6 +108,7 @@ export function OmezarrViewer({
             onMouseUp={onMouseUp}
             onMouseMove={onMouseMove}
             onMouseLeave={onMouseLeave}
+            onWheel={onWheel}
         />
     );
 }

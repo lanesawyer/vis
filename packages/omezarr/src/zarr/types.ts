@@ -1,6 +1,6 @@
-import type { CartesianPlane, Interval } from '@alleninstitute/vis-geometry';
+import { Vec4, type CartesianPlane, type Interval, type vec3, type vec4 } from '@alleninstitute/vis-geometry';
 import { VisZarrDataError, VisZarrIndexError } from '../errors';
-import { logger } from '@alleninstitute/vis-core';
+import { logger, makeRGBAColorVector, makeRGBColorVector } from '@alleninstitute/vis-core';
 import type * as zarr from 'zarrita';
 import { z } from 'zod';
 
@@ -122,7 +122,8 @@ export type OmeZarrOmero = {
 };
 
 export type OmeZarrColorChannel = {
-    color: string;
+    rgb: vec3;
+    rgba: vec4;
     window: Interval;
     range: Interval;
     active?: boolean | undefined;
@@ -168,13 +169,26 @@ export function convertFromOmeroToColorChannels(omero: OmeZarrOmero): OmeZarrCol
 export function convertFromOmeroChannelToColorChannel(omeroChannel: OmeZarrOmeroChannel): OmeZarrColorChannel {
     const active = omeroChannel.active;
     const label = omeroChannel.label;
-    const color = omeroChannel.color;
+    const rgba = makeRGBAColorVector(omeroChannel.color);
+    const rgb: vec3 = [rgba[0], rgba[1], rgba[2]];
     const { min: winMin, max: winMax } = omeroChannel.window;
     const { start: ranMin, end: ranMax } = omeroChannel.window;
     const window: Interval = { min: winMin, max: winMax };
     const range: Interval = { min: ranMin, max: ranMax };
-    return { active, label, color, window, range };
+
+    return { rgb, rgba, window, range, active, label };
 }
+
+export type OmeZarrMetadataFlattened = {
+    url: string;
+    attrs: OmeZarrAttrs;
+    arrays: ReadonlyArray<OmeZarrArrayMetadata>;
+    zarrVersion: number;
+    colorChannels: OmeZarrColorChannel[];
+    redChannel: OmeZarrColorChannel | undefined;
+    blueChannel: OmeZarrColorChannel | undefined;
+    greenChannel: OmeZarrColorChannel | undefined;
+};
 
 export class OmeZarrMetadata {
     #url: string;
@@ -203,6 +217,19 @@ export class OmeZarrMetadata {
 
     get zarrVersion(): number {
         return this.#zarrVersion;
+    }
+
+    toJSON(): OmeZarrMetadataFlattened {
+        return {
+            url: this.url,
+            attrs: this.attrs,
+            arrays: this.arrays,
+            zarrVersion: this.zarrVersion,
+            colorChannels: this.colorChannels,
+            redChannel: this.redChannel,
+            blueChannel: this.blueChannel,
+            greenChannel: this.greenChannel,
+        };
     }
 
     #getMultiscaleIndex(multiscale?: number | string): number {

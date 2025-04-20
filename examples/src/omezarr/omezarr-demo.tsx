@@ -1,18 +1,10 @@
-import {
-    Box2D,
-    CartesianPlane,
-    type Interval,
-    PLANE_XY,
-    type box2D,
-    type vec2,
-    type vec3,
-} from '@alleninstitute/vis-geometry';
-import { makeRGBColorVector } from '@alleninstitute/vis-core';
+import { Box2D, type Interval, PLANE_XY, Vec2, type box2D, type vec2 } from '@alleninstitute/vis-geometry';
 import { type OmeZarrMetadata, loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
 import type { RenderSettings, RenderSettingsChannels } from '@alleninstitute/vis-omezarr';
 import { logger, type WebResource } from '@alleninstitute/vis-core';
 import type React from 'react';
 import { useEffect, useMemo, useState } from 'react';
+
 import { pan, zoom } from '~/common/camera';
 import { RenderServerProvider } from '~/common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
@@ -56,6 +48,7 @@ const demoOptions: DemoOption[] = [
 ];
 
 const screenSize: vec2 = [500, 500];
+const zoomStep = 0.1;
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
@@ -98,6 +91,9 @@ export function OmezarrDemo() {
         [omezarr, view, planeIndex],
     );
 
+    const dataset = omezarr?.getFirstShapedDataset(0);
+    const size = omezarr?.attrs && dataset ? sizeInUnits(PLANE_XY, omezarr.attrs.multiscales[0].axes, dataset) : [0, 0];
+
     const load = (res: WebResource) => {
         loadMetadata(res).then((v) => {
             setOmezarr(v);
@@ -109,8 +105,10 @@ export function OmezarrDemo() {
             }
             const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
             if (size) {
-                logger.info('size', size);
-                setView(Box2D.create([0, 0], size));
+                logger.info('dataset size', size);
+                const aspectRatio = screenSize[0] / screenSize[1];
+                const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
+                setView(Box2D.create([0, 0], adjustedSize));
             }
         });
     };
@@ -143,6 +141,18 @@ export function OmezarrDemo() {
     // you could put this on the mouse wheel, but for this demo we'll have buttons
     const handlePlaneIndex = (next: 1 | -1) => {
         setPlaneIndex((prev) => Math.max(0, Math.min(prev + next, (omezarr?.maxOrthogonal(PLANE_XY) ?? 1) - 1)));
+    };
+
+    const zoomIn = () => {
+        const zoomFactor = 1 - zoomStep; // Zoom in factor
+        const v = zoom(view, screenSize, zoomFactor, Vec2.div(screenSize, [2, 2]));
+        setView(v);
+    };
+
+    const zoomOut = () => {
+        const zoomFactor = 1 / (1 - zoomStep); // Reciprocal of zoom in factor
+        const v = zoom(view, screenSize, zoomFactor, Vec2.div(screenSize, [2, 2]));
+        setView(v);
     };
 
     const handleZoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
@@ -248,14 +258,51 @@ export function OmezarrDemo() {
                                         Slide {planeIndex + 1} of {omezarr?.maxOrthogonal(PLANE_XY) ?? 0}
                                     </span>
                                 )) || <span>No image loaded</span>}
-                                <div style={{}}>
-                                    <button type="button" onClick={() => handlePlaneIndex(-1)}>
-                                        &#9664;
-                                    </button>
-                                    <button type="button" onClick={() => handlePlaneIndex(1)}>
-                                        &#9654;
-                                    </button>
-                                </div>
+                                {omezarr && (
+                                    <div>
+                                        <button type="button" onClick={() => handlePlaneIndex(-1)}>
+                                            &#9664;
+                                        </button>
+                                        <button type="button" onClick={() => handlePlaneIndex(1)}>
+                                            &#9654;
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    gap: '8px',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                {omezarr && size && (
+                                    <>
+                                        <span>
+                                            Zoom{' '}
+                                            {((size[0] / (view.maxCorner[0] - view.minCorner[0])) * 100).toFixed(2)}%
+                                        </span>
+                                        <div>
+                                            <button type="button" onClick={zoomIn}>
+                                                &#43;
+                                            </button>
+                                            <button type="button" onClick={zoomOut}>
+                                                &#8722;
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const aspectRatio = screenSize[0] / screenSize[1];
+                                                    const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
+                                                    setView(Box2D.create([0, 0], adjustedSize));
+                                                }}
+                                            >
+                                                Reset
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

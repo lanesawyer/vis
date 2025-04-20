@@ -52,10 +52,16 @@ const zoomStep = 0.1;
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
-function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omezarr: OmeZarrMetadata): RenderSettings {
+function makeZarrSettings(
+    screenSize: vec2,
+    view: box2D,
+    orthoVal: number,
+    omezarr: OmeZarrMetadata,
+    colorOverrides: (number | undefined)[],
+): RenderSettings {
     const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
         acc[val.label ?? `${index}`] = {
-            rgb: val.rgb,
+            rgb: [colorOverrides[0] ?? val.rgb[0], colorOverrides[1] ?? val.rgb[1], colorOverrides[2] ?? val.rgb[2]],
             gamut: val.range,
             index,
         };
@@ -63,9 +69,9 @@ function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omeza
     }, {} as RenderSettingsChannels);
 
     const fallbackChannels: RenderSettingsChannels = {
-        R: { rgb: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
-        G: { rgb: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
-        B: { rgb: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
+        R: { rgb: [colorOverrides[0] ?? 1.0, 0, 0], gamut: defaultInterval, index: 0 },
+        G: { rgb: [0, colorOverrides[1] ?? 1.0, 0], gamut: defaultInterval, index: 1 },
+        B: { rgb: [0, 0, colorOverrides[2] ?? 1.0], gamut: defaultInterval, index: 2 },
     };
 
     return {
@@ -86,9 +92,16 @@ export function OmezarrDemo() {
     const [planeIndex, setPlaneIndex] = useState(0);
     const [dragging, setDragging] = useState(false);
 
+    const [firstChannel, setFirstChannel] = useState<number | undefined>(undefined);
+    const [secondChannel, setSecondChannel] = useState<number | undefined>(undefined);
+    const [thirdChannel, setThirdChannel] = useState<number | undefined>(undefined);
+
     const settings: RenderSettings | undefined = useMemo(
-        () => (omezarr ? makeZarrSettings(screenSize, view, planeIndex, omezarr) : undefined),
-        [omezarr, view, planeIndex],
+        () =>
+            omezarr
+                ? makeZarrSettings(screenSize, view, planeIndex, omezarr, [firstChannel, secondChannel, thirdChannel])
+                : undefined,
+        [omezarr, view, planeIndex, firstChannel, secondChannel, thirdChannel],
     );
 
     const dataset = omezarr?.getFirstShapedDataset(0);
@@ -116,6 +129,9 @@ export function OmezarrDemo() {
     const handleOptionSelected = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedValue = e.target.value;
         setOmezarr(null);
+        setFirstChannel(undefined);
+        setSecondChannel(undefined);
+        setThirdChannel(undefined);
         setSelectedDemoOptionValue(selectedValue);
         if (selectedValue && selectedValue !== 'custom') {
             const option = demoOptions.find((v) => v.value === selectedValue);
@@ -176,6 +192,18 @@ export function OmezarrDemo() {
     const handleMouseUp = () => {
         setDragging(false);
     };
+
+    const channelsArray = Object.entries(settings?.channels ?? {});
+    const firstChannelData = channelsArray[0];
+    const secondChannelData = channelsArray[1];
+    const thirdChannelData = channelsArray[2];
+
+    const firstChannelMin = firstChannelData?.[1]?.gamut.min ?? 0;
+    const firstChannelMax = firstChannelData?.[1]?.gamut.max ?? 255;
+    const secondChannelMin = secondChannelData?.[1]?.gamut.min ?? 0;
+    const secondChannelMax = secondChannelData?.[1]?.gamut.max ?? 255;
+    const thirdChannelMin = thirdChannelData?.[1]?.gamut.min ?? 0;
+    const thirdChannelMax = thirdChannelData?.[1]?.gamut.max ?? 255;
 
     return (
         <RenderServerProvider>
@@ -301,6 +329,56 @@ export function OmezarrDemo() {
                                                 Reset
                                             </button>
                                         </div>
+                                    </>
+                                )}
+                            </div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    gap: '8px',
+                                }}
+                            >
+                                {omezarr && (
+                                    <>
+                                        <div>
+                                            <div>
+                                                {firstChannelData[0]} ({firstChannel}):{' '}
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={firstChannelMin}
+                                                max={firstChannelMax}
+                                                onChange={(e) => setFirstChannel(Number(e.target.value))}
+                                                style={{ accentColor: 'red' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <div>
+                                                {secondChannelData[0]} ({secondChannel}):{' '}
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={secondChannelMin}
+                                                max={secondChannelMax}
+                                                onChange={(e) => setSecondChannel(Number(e.target.value))}
+                                                style={{ accentColor: 'green' }}
+                                            />
+                                        </div>
+                                        {thirdChannelData && (
+                                            <div>
+                                                <div>
+                                                    {thirdChannelData?.[0]} ({thirdChannel}):{' '}
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min={thirdChannelMin}
+                                                    max={thirdChannelMax}
+                                                    onChange={(e) => setThirdChannel(Number(e.target.value))}
+                                                    style={{ accentColor: 'blue' }}
+                                                />
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>

@@ -6,22 +6,22 @@ import { defineConfig } from 'vite';
 // To support the layers demo we need to include the layers.html file in the build,
 // which we do by configuring Rollup to use any HTML files in the /examples directory
 function getHtmlEntries() {
-  const pagesDir = path.resolve(__dirname, "");
-  const entries = {};
+    const pagesDir = path.resolve(__dirname, '');
+    const entries = {};
 
-  // Read all files in the directory
-  const files = fs.readdirSync(pagesDir);
+    // Read all files in the directory
+    const files = fs.readdirSync(pagesDir);
 
-  // Filter out HTML files
-  const htmlFiles = files.filter((file) => file.endsWith(".html"));
+    // Filter out HTML files
+    const htmlFiles = files.filter((file) => file.endsWith('.html'));
 
-  // Create entries for each HTML file
-  for (const file of htmlFiles){
-    const name = path.basename(file, ".html");
-    entries[name] = path.resolve(pagesDir, file);
-  }
+    // Create entries for each HTML file
+    for (const file of htmlFiles) {
+        const name = path.basename(file, '.html');
+        entries[name] = path.resolve(pagesDir, file);
+    }
 
-  return entries;
+    return entries;
 }
 
 // https://vitejs.dev/config/
@@ -40,8 +40,8 @@ export default defineConfig({
             input: getHtmlEntries(),
             output: {
                 format: 'es',
-            }
-        }
+            },
+        },
     },
     // Needed for the Rollup build changes to work
     worker: {

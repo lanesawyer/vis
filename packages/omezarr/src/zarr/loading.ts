@@ -68,19 +68,20 @@ async function loadZarrArrayFileFromStore(
     version = 2,
     loadV2Attrs = true,
 ): Promise<OmeZarrArrayMetadataLoad> {
-    const root = zarr.root(store);
-    let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
-    if (version === 3) {
-        array = await zarr.open.v3(root.resolve(path), { kind: 'array' });
-    } else if (version === 2) {
-        array = await zarr.open.v2(root.resolve(path), { kind: 'array', attrs: loadV2Attrs });
-    } else {
-        const message = `unsupported Zarr format version specified: ${version}`;
-        logger.error(message);
-        throw new VisZarrDataError(message);
-    }
-    const { shape, attrs } = array;
     try {
+        const root = zarr.root(store);
+        let array: zarr.Array<zarr.DataType, zarr.FetchStore>;
+        if (version === 3) {
+            array = await zarr.open.v3(root.resolve(path), { kind: 'array' });
+        } else if (version === 2) {
+            array = await zarr.open.v2(root.resolve(path), { kind: 'array', attrs: loadV2Attrs });
+        } else {
+            const message = `unsupported Zarr format version specified: ${version}`;
+            logger.error(message);
+            throw new VisZarrDataError(message);
+        }
+        const { shape, attrs } = array;
+
         return { metadata: { path, shape, attrs }, raw: array };
     } catch (e) {
         if (e instanceof ZodError) {
@@ -165,6 +166,7 @@ export function pickBestScale(
         }
         return Vec2.length(Vec2.sub(a, goal));
     };
+    // Looks like this is why it stops for the CZI one, it's a different order!
     // we assume the datasets are ordered... hmmm TODO
     const choice = datasets.reduce((bestSoFar, cur) => {
         const planeSizeBest = planeSizeInVoxels(plane, axes, bestSoFar);
@@ -319,7 +321,9 @@ export async function loadSlice(
         throw new VisZarrDataError(message);
     }
     const { raw } = await loadZarrArrayFileFromStore(store, arr.path, 2, false);
-    const result = await zarr.get(raw, buildQuery(r, axes, level.shape), { opts: { signal: signal ?? null } });
+    // this is throwing the error, the level is index out of bounds for some reason
+    const query = buildQuery(r, axes, level.shape);
+    const result = await zarr.get(raw, query, { opts: { signal: signal ?? null } });
     if (typeof result === 'number') {
         throw new Error('oh noes, slice came back all weird');
     }

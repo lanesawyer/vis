@@ -121,6 +121,26 @@ export async function loadMetadata(res: WebResource, version = 2, loadV2ArrayAtt
 
 export type ZarrRequest = Record<ZarrDimension, number | Interval | null>;
 
+function sortDatasetsByResolution(
+    datasets: OmeZarrShapedDataset[],
+    axes: readonly OmeZarrAxis[],
+    plane: CartesianPlane
+): OmeZarrShapedDataset[] {
+    return datasets.sort((a, b) => {
+        const sizeA = planeSizeInVoxels(plane, axes, a);
+        const sizeB = planeSizeInVoxels(plane, axes, b);
+
+        if (!sizeA || !sizeB) {
+            return 0; // Keep original order if sizes can't be determined
+        }
+
+        // Compare total voxel counts (product of dimensions)
+        const totalA = sizeA[0] * sizeA[1];
+        const totalB = sizeB[0] * sizeB[1];
+        return totalA - totalB; // Ascending order (smallest resolution first)
+    });
+}
+
 /**
  * given a region of a volume to view at a certain output resolution, find the layer in the ome-zarr dataset which
  * is most appropriate - that is to say, as close to 1:1 relation between voxels and display pixels as possible.
@@ -153,6 +173,9 @@ export function pickBestScale(
         logger.error(message);
         throw new VisZarrDataError(message);
     }
+
+    // Sort datasets by resolution
+    const sortedDatasets = sortDatasetsByResolution(datasets, axes, plane);
 
     const vxlPitch = (size: vec2) => Vec2.div(realSize, size);
     // size, in dataspace, of a pixel 1/res
@@ -321,14 +344,18 @@ export async function loadSlice(
         throw new VisZarrDataError(message);
     }
     const { raw } = await loadZarrArrayFileFromStore(store, arr.path, 2, false);
-    // this is throwing the error, the level is index out of bounds for some reason
-    const query = buildQuery(r, axes, level.shape);
-    const result = await zarr.get(raw, query, { opts: { signal: signal ?? null } });
-    if (typeof result === 'number') {
-        throw new Error('oh noes, slice came back all weird');
+    try {
+        // this is throwing the error, the level is index out of bounds for some reason
+        const query = buildQuery(r, axes, level.shape);
+        const result = await zarr.get(raw, query, { opts: { signal: signal ?? null } });
+        if (typeof result === 'number') {
+            throw new Error('oh noes, slice came back all weird');
+        }
+        return {
+            shape: result.shape,
+            buffer: result,
+        };
+    } catch (e) {
+        console.error('could not load Zarr file: parsing failed');
     }
-    return {
-        shape: result.shape,
-        buffer: result,
-    };
 }

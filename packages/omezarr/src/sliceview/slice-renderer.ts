@@ -148,6 +148,7 @@ export function buildOmeZarrSliceRenderer(
             return getVisibleTiles(camera, plane, orthoVal, dataset, tileSize);
         },
         fetchItemContent: (item, dataset, settings, signal) => {
+            // don't do if dataset isn't the right one
             const contents: Record<string, () => Promise<ReglCacheEntry>> = {};
             for (const key in settings.channels) {
                 contents[key] = () =>

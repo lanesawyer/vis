@@ -6,6 +6,7 @@ import {
     buildAsyncOmezarrRenderer,
 } from '@alleninstitute/vis-omezarr';
 import type { RenderFrameFn, RenderServer } from '@alleninstitute/vis-core';
+import '@alleninstitute/vis-web-components';
 import { useContext, useEffect, useRef } from 'react';
 import type REGL from 'regl';
 import { renderServerContext } from '~/common/react/render-server-provider';
@@ -21,6 +22,7 @@ interface OmezarrViewerProps {
     onMouseUp?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseMove?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseLeave?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
+    selectedDatasetUrl: string | undefined;
 }
 
 function compose(ctx: CanvasRenderingContext2D, image: ImageData) {
@@ -40,12 +42,16 @@ export function OmezarrViewer({
     onMouseUp,
     onMouseMove,
     onMouseLeave,
+    screenSize,
+    selectedDatasetUrl,
 }: OmezarrViewerProps) {
     const canvas = useRef<HTMLCanvasElement>(null);
     const server = useContext(renderServerContext);
     const renderer = useRef<ReturnType<typeof buildAsyncOmezarrRenderer>>();
     const imgRenderer = useRef<ReturnType<typeof buildImageRenderer>>();
     const stash = useRef<StashedView>();
+
+    const webComponentRef = useRef<HTMLElement>(null);
 
     // setup renderer and delete it when component goes away
     useEffect(() => {
@@ -58,12 +64,25 @@ export function OmezarrViewer({
             });
             imgRenderer.current = buildImageRenderer(server.regl);
         }
+
+        // set up the web component
+        if (server?.regl && webComponentRef.current) {
+            webComponentRef.current.setRenderServer(server);
+        }
+
         return () => {
             if (c) {
                 server?.destroyClient(c);
             }
         };
     }, [server, omezarr]);
+
+    useEffect(() => {
+        if (settings && webComponentRef.current) {
+            webComponentRef.current.setSettings(settings);
+        }
+    }, [settings]);
+
     useEffect(() => {
         // set up the stash:
         if (server?.regl) {
@@ -115,7 +134,7 @@ export function OmezarrViewer({
         if (server && renderer.current && canvas.current && omezarr) {
             const renderFrame: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
                 if (renderer.current) {
-                    // if we had a stashed buffer of the previous frame...
+                    // if we had a stashed buffer ofsettings the previous frame...
                     // we could pre-load it into target, right here!
                     return renderer.current(omezarr, settings, callback, target, cache);
                 }
@@ -188,16 +207,25 @@ export function OmezarrViewer({
     }, [server, omezarr, settings]);
 
     return (
-        <canvas
-            id={id}
-            ref={canvas}
-            width={settings.camera.screenSize[0]}
-            height={settings.camera.screenSize[1]}
-            onMouseDown={onMouseDown}
-            onMouseUp={onMouseUp}
-            onMouseMove={onMouseMove}
-            onMouseLeave={onMouseLeave}
-            onWheel={onWheel}
-        />
+        <>
+            <canvas
+                id={id}
+                ref={canvas}
+                width={settings.camera.screenSize[0]}
+                height={settings.camera.screenSize[1]}
+                onMouseDown={onMouseDown}
+                onMouseUp={onMouseUp}
+                onMouseMove={onMouseMove}
+                onMouseLeave={onMouseLeave}
+                onWheel={onWheel}
+            />
+            <ome-zarr-viewer
+                ref={webComponentRef}
+                id="test"
+                url={selectedDatasetUrl}
+                width={screenSize?.[0]}
+                height={screenSize?.[1]}
+            />
+        </>
     );
 }

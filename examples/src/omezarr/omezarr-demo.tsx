@@ -158,6 +158,8 @@ export function OmezarrDemo() {
         setDragging(false);
     };
 
+    const selectedDatasetUrl = demoOptions.find((v) => v.value === selectedDemoOptionValue)?.res.url;
+
     return (
         <RenderServerProvider>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -223,6 +225,7 @@ export function OmezarrDemo() {
                                         onMouseDown={handleMouseDown}
                                         onMouseUp={handleMouseUp}
                                         onMouseLeave={handleMouseUp}
+                                        selectedDatasetUrl={selectedDatasetUrl}
                                     />
                                 )}
                             </div>

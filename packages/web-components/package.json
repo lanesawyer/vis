@@ -1,0 +1,37 @@
+{
+    "name": "@alleninstitute/vis-web-components",
+    "version": "0.0.1",
+    "contributors": [
+        {
+            "name": "Lane Sawyer",
+            "email": "lane.sawyer@alleninstitute.org"
+        }
+    ],
+    "license": "BSD-3-Clause",
+    "source": "src/index.ts",
+    "main": "dist/main.js",
+    "module": "dist/module.js",
+    "types": "dist/types.d.ts",
+    "files": ["dist"],
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "build": "parcel build --no-cache",
+        "dev": "vite",
+        "test": "vitest --watch",
+        "test:ci": "vitest run",
+        "coverage": "vitest run --coverage"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/AllenInstitute/vis.git"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/AllenInstitute"
+    },
+    "dependencies": {
+        "@alleninstitute/vis-core": "workspace:*",
+        "@alleninstitute/vis-omezarr": "workspace:*",
+        "regl": "2.1.1"
+    },
+    "packageManager": "pnpm@9.14.2"
+}

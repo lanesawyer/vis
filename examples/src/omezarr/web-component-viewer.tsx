@@ -69,10 +69,8 @@ export function WebComponentViewer({
         const viewer = webComponentRef.current;
 
         if (viewer && onMouseDown) {
-            // Attach the onMouseDown event listener
             viewer.addEventListener('mousedown', onMouseDown);
 
-            // Cleanup the event listener on unmount
             return () => {
                 viewer.removeEventListener('mousedown', onMouseDown);
             };
@@ -83,10 +81,8 @@ export function WebComponentViewer({
         const viewer = webComponentRef.current;
 
         if (viewer && onMouseUp) {
-            // Attach the onMouseDown event listener
             viewer.addEventListener('mouseup', onMouseUp);
 
-            // Cleanup the event listener on unmount
             return () => {
                 viewer.removeEventListener('mouseup', onMouseUp);
             };
@@ -97,10 +93,8 @@ export function WebComponentViewer({
         const viewer = webComponentRef.current;
 
         if (viewer && onMouseMove) {
-            // Attach the onMouseDown event listener
             viewer.addEventListener('mousemove', onMouseMove);
 
-            // Cleanup the event listener on unmount
             return () => {
                 viewer.removeEventListener('mousemove', onMouseMove);
             };
@@ -111,10 +105,8 @@ export function WebComponentViewer({
         const viewer = webComponentRef.current;
 
         if (viewer && onMouseLeave) {
-            // Attach the onMouseDown event listener
             viewer.addEventListener('mouseleave', onMouseLeave);
 
-            // Cleanup the event listener on unmount
             return () => {
                 viewer.removeEventListener('mouseleave', onMouseLeave);
             };
@@ -123,10 +115,10 @@ export function WebComponentViewer({
 
     useEffect(() => {
         const viewer = webComponentRef.current;
+
         if (viewer && onWheel) {
-            // Attach the onMouseDown event listener
             viewer.addEventListener('wheel', onWheel);
-            // Cleanup the event listener on unmount
+
             return () => {
                 viewer.removeEventListener('wheel', onWheel);
             };
@@ -134,29 +126,16 @@ export function WebComponentViewer({
     }, [onWheel]);
 
     if (!selectedDatasetUrl) {
-        return <div>Loading...</div>;
+        return <div>Choose a dataset...</div>;
     }
 
     return (
-        <>
-            {/* <canvas
-                id={id}
-                ref={canvas}
-                width={settings.camera.screenSize[0]}
-                height={settings.camera.screenSize[1]}
-                onMouseDown={onMouseDown}
-                onMouseUp={onMouseUp}
-                onMouseMove={onMouseMove}
-                onMouseLeave={onMouseLeave}
-                onWheel={onWheel}   
-            /> */}
-            <ome-zarr-viewer
-                ref={webComponentRef}
-                id="test"
-                url={selectedDatasetUrl}
-                width={screenSize?.[0]}
-                height={screenSize?.[1]}
-            />
-        </>
+        <ome-zarr-viewer
+            ref={webComponentRef}
+            id="test"
+            url={selectedDatasetUrl}
+            width={screenSize?.[0]}
+            height={screenSize?.[1]}
+        />
     );
 }

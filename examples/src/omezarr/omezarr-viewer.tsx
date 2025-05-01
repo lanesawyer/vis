@@ -1,4 +1,4 @@
-import { Box2D, type vec2 } from '@alleninstitute/vis-geometry';
+import { Box2D } from '@alleninstitute/vis-geometry';
 import {
     type RenderSettings,
     type VoxelTile,
@@ -15,14 +15,12 @@ import { buildImageRenderer } from '~/common/image-renderer';
 interface OmezarrViewerProps {
     omezarr: OmeZarrMetadata;
     id: string;
-    screenSize: vec2;
     settings: RenderSettings;
     onWheel?: (e: React.WheelEvent<HTMLCanvasElement>) => void;
     onMouseDown?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseUp?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseMove?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
     onMouseLeave?: (e: React.MouseEvent<HTMLCanvasElement>) => void;
-    selectedDatasetUrl: string | undefined;
 }
 
 function compose(ctx: CanvasRenderingContext2D, image: ImageData) {
@@ -42,8 +40,6 @@ export function OmezarrViewer({
     onMouseUp,
     onMouseMove,
     onMouseLeave,
-    screenSize,
-    selectedDatasetUrl,
 }: OmezarrViewerProps) {
     const canvas = useRef<HTMLCanvasElement>(null);
     const server = useContext(renderServerContext);

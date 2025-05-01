@@ -233,14 +233,12 @@ export function OmezarrDemo() {
                                     <OmezarrViewer
                                         omezarr={omezarr}
                                         id="omezarr-viewer"
-                                        screenSize={screenSize}
                                         settings={settings}
                                         onWheel={handleZoom}
                                         onMouseMove={handlePan}
                                         onMouseDown={handleMouseDown}
                                         onMouseUp={handleMouseUp}
                                         onMouseLeave={handleMouseUp}
-                                        selectedDatasetUrl={selectedDatasetUrl}
                                     />
                                 )}
                             </div>
@@ -268,32 +266,32 @@ export function OmezarrDemo() {
                             </div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label htmlFor="omezarr-json-view">handleWebComponentPanSelected Image Metadata:</label>
-                        <textarea
-                            id="omezarr-json-view"
-                            readOnly
-                            cols={100}
-                            rows={36}
-                            style={{ resize: 'none' }}
-                            value={omezarrJson}
+                    <div>
+                        <WebComponentViewer
+                            id="web-component-viewer"
+                            selectedDatasetUrl={selectedDatasetUrl}
+                            settings={settings}
+                            screenSize={screenSize}
+                            onMouseDown={handleMouseDown}
+                            onMouseUp={handleMouseUp}
+                            onMouseMove={handleWebComponentPan}
+                            onMouseLeave={handleMouseUp}
+                            onWheel={handleWebComponentZoom}
                         />
                     </div>
                 </div>
             </div>
-            <div>
-                <WebComponentViewer
-                    id="web-component-viewer"
-                    selectedDatasetUrl={selectedDatasetUrl}
-                    settings={settings}
-                    screenSize={screenSize}
-                    onMouseDown={handleMouseDown}
-                    onMouseUp={handleMouseUp}
-                    onMouseMove={handleWebComponentPan}
-                    onMouseLeave={handleMouseUp}
-                    onWheel={handleWebComponentZoom}
+            {/* <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
+                <textarea
+                    id="omezarr-json-view"
+                    readOnly
+                    cols={100}
+                    rows={36}
+                    style={{ resize: 'none' }}
+                    value={omezarrJson}
                 />
-            </div>
+            </div> */}
         </RenderServerProvider>
     );
 }

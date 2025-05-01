@@ -67,6 +67,7 @@ export class OmeZarrViewer extends HTMLElement {
 
     public setSettings(settings: RenderSettings) {
         this.settings = settings;
+        this.beginRendering();
     }
 
     private loadOmeZarr() {
@@ -122,13 +123,13 @@ export class OmeZarrViewer extends HTMLElement {
             renderFrame,
             (e) => {
                 switch (e.status) {
-                    case 'begin':
+                    case 'begin': {
                         logger.info('begin rendering');
-                        // server.regl?.clear({
-                        //     framebuffer: e.target,
-                        //     color: [0, 0, 0, 0],
-                        //     depth: 1,
-                        // });
+                        this.renderServer?.regl?.clear({
+                            framebuffer: e.target,
+                            color: [0, 0, 0, 0],
+                            depth: 1,
+                        });
                         // lowResPreview(e.target, server.cache, (_e) => {})?.cancelFrame(
                         //     'lowres preview beneath actual frame',
                         // );
@@ -143,14 +144,15 @@ export class OmeZarrViewer extends HTMLElement {
                         //     e.server.copyToClient(compose);
                         // }
                         break;
-                    case 'progress':
+                    }
+                    case 'progress': {
                         logger.info('progress rendering');
-                        // wanna see the tiles as they arrive?
-                        // e.server.copyToClient(compose);
+                        e.server.copyToClient(this.compose);
                         // if (e.target !== null && server) {
                         //     stashProgress(server, e.target);
                         // }
                         break;
+                    }
                     case 'finished': {
                         logger.info('finished rendering');
                         e.server.copyToClient(this.compose);
@@ -160,11 +162,8 @@ export class OmeZarrViewer extends HTMLElement {
                         // }
                         break;
                     }
-                    case 'cancelled':
+                    case 'cancelled': {
                         logger.info('cancelled rendering');
-                        break;
-                    default: {
-                        logger.info('default rendering');
                         break;
                     }
                 }

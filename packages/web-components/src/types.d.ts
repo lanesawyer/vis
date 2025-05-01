@@ -1,5 +1,4 @@
-import { RenderServer } from '@alleninstitute/vis-core';
-import { RenderSettings } from '@alleninstitute/vis-omezarr';
+import type { RenderSettings } from '@alleninstitute/vis-omezarr';
 
 declare global {
     interface OmeZarrViewer extends HTMLElement {

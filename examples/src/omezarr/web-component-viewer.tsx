@@ -1,5 +1,5 @@
-import { type vec2 } from '@alleninstitute/vis-geometry';
-import { type RenderSettings } from '@alleninstitute/vis-omezarr';
+import type { vec2 } from '@alleninstitute/vis-geometry';
+import type { RenderSettings } from '@alleninstitute/vis-omezarr';
 import '@alleninstitute/vis-web-components';
 import type { OmeZarrViewer } from '@alleninstitute/vis-web-components';
 import { useContext, useEffect, useRef } from 'react';
@@ -68,11 +68,7 @@ export function WebComponentViewer({
     useEffect(() => {
         const viewer = webComponentRef.current;
 
-        if (viewer && onMouseDown) {declare global {
-            interface HTMLElementTagNameMap {
-                'ome-zarr-viewer': OmeZarrViewer;
-            }
-        }
+        if (viewer && onMouseDown) {
             // Attach the onMouseDown event listener
             viewer.addEventListener('mousedown', onMouseDown);
 
@@ -95,7 +91,7 @@ export function WebComponentViewer({
                 viewer.removeEventListener('mouseup', onMouseUp);
             };
         }
-    }, [onMouseDown]);
+    }, [onMouseUp]);
 
     useEffect(() => {
         const viewer = webComponentRef.current;
@@ -124,7 +120,6 @@ export function WebComponentViewer({
             };
         }
     }, [onMouseLeave]);
-    settings;
 
     useEffect(() => {
         const viewer = webComponentRef.current;

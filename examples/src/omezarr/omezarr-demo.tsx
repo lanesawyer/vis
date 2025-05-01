@@ -48,6 +48,7 @@ const demoOptions: DemoOption[] = [
 ];
 
 const screenSize: vec2 = [500, 500];
+const zoomStep = 0.1;
 
 const defaultInterval: Interval = { min: 0, max: 80 };
 
@@ -101,8 +102,10 @@ export function OmezarrDemo() {
             }
             const size = sizeInUnits(PLANE_XY, v.attrs.multiscales[0].axes, dataset);
             if (size) {
-                logger.info('size', size);
-                setView(Box2D.create([0, 0], size));
+                logger.info('dataset size', size);
+                const aspectRatio = screenSize[0] / screenSize[1];
+                const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
+                setView(Box2D.create([0, 0], adjustedSize));
             }
         });
     };
@@ -138,15 +141,17 @@ export function OmezarrDemo() {
     };
 
     const handleZoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
-        // e.preventDefault();
-        const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
+        const zoomInFactor = 1 / (1 - zoomStep);
+        const zoomOutFactor = 1 - zoomStep;
+        const zoomScale = e.deltaY > 0 ? zoomInFactor : zoomOutFactor;
         const v = zoom(view, screenSize, zoomScale, [e.nativeEvent.offsetX, e.nativeEvent.offsetY]);
         setView(v);
     };
 
     const handleWebComponentZoom = (e: WheelEvent) => {
-        // e.preventDefault();
-        const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
+        const zoomInFactor = 1 / (1 - zoomStep);
+        const zoomOutFactor = 1 - zoomStep;
+        const zoomScale = e.deltaY > 0 ? zoomInFactor : zoomOutFactor;
         const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
         setView(v);
     };

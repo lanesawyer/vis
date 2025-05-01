@@ -177,10 +177,19 @@ export class OmeZarrViewer extends HTMLElement {
         const width = this.getAttribute('width') || '100';
         const height = this.getAttribute('height') || '100';
 
+        this.setAttribute('width', width);
+        this.setAttribute('height', height);
+
+        this.style.display = 'block';
+        this.style.width = `${width}px`;
+        this.style.height = `${height}px`;
+        this.style.border = '1px solid black';
+
         this.container.style.width = `${width}px`;
         this.container.style.height = `${height}px`;
-        this.container.style.border = '1px solid black';
     }
 }
 
-customElements.define('ome-zarr-viewer', OmeZarrViewer);
+if (!customElements.get('ome-zarr-viewer')) {
+    customElements.define('ome-zarr-viewer', OmeZarrViewer);
+}

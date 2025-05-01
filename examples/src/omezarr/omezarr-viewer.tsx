@@ -51,8 +51,6 @@ export function OmezarrViewer({
     const imgRenderer = useRef<ReturnType<typeof buildImageRenderer>>();
     const stash = useRef<StashedView>();
 
-    const webComponentRef = useRef<HTMLElement>(null);
-
     // setup renderer and delete it when component goes away
     useEffect(() => {
         const c = canvas?.current;
@@ -65,23 +63,12 @@ export function OmezarrViewer({
             imgRenderer.current = buildImageRenderer(server.regl);
         }
 
-        // set up the web component
-        if (server?.regl && webComponentRef.current) {
-            webComponentRef.current.setRenderServer(server);
-        }
-
         return () => {
             if (c) {
                 server?.destroyClient(c);
             }
         };
     }, [server, omezarr]);
-
-    useEffect(() => {
-        if (settings && webComponentRef.current) {
-            webComponentRef.current.setSettings(settings);
-        }
-    }, [settings]);
 
     useEffect(() => {
         // set up the stash:
@@ -218,13 +205,6 @@ export function OmezarrViewer({
                 onMouseMove={onMouseMove}
                 onMouseLeave={onMouseLeave}
                 onWheel={onWheel}
-            />
-            <ome-zarr-viewer
-                ref={webComponentRef}
-                id="test"
-                url={selectedDatasetUrl}
-                width={screenSize?.[0]}
-                height={screenSize?.[1]}
             />
         </>
     );

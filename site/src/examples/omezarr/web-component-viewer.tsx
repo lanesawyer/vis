@@ -1,6 +1,5 @@
 import type { vec2 } from '@alleninstitute/vis-geometry';
 import type { RenderSettings } from '@alleninstitute/vis-omezarr';
-import '@alleninstitute/vis-web-components';
 import type { OmeZarrViewer } from '@alleninstitute/vis-web-components';
 import { useContext, useEffect, useRef } from 'react';
 import { renderServerContext } from '../common/react/render-server-provider';

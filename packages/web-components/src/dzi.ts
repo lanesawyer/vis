@@ -55,41 +55,41 @@ export class DziViewer extends HTMLElement {
         // renderServer handles scheduling and composition
         this.renderServer.beginRendering(
             renderFrame,
-                (e) => {
-                    switch (e.status) {
-                        case 'begin': {
-                            logger.debug('Rendering started');
-                            this.renderServer?.regl?.clear({
-                                framebuffer: e.target,
-                                color: [0, 0, 0, 0],
-                                depth: 1,
-                            });
-                            break;
-                        }
-                        case 'progress': {
-                            logger.debug('Rendering progress');
-                            e.server.copyToClient((ctx: CanvasRenderingContext2D, image: ImageData) => {
-                                ctx.putImageData(image, 0, 0);
-                            });
-                            break;
-                        }
-                        case 'finished': {
-                            logger.debug('Rendering finished');
-                            e.server.copyToClient((ctx: CanvasRenderingContext2D, image: ImageData) => {
-                                ctx.putImageData(image, 0, 0);
-                            });
-                            break;
-                        }
-                        case 'cancelled': {
-                            logger.debug('Rendering cancelled');
-                            break;
-                        }
-                        default: {
-                            logger.warn(`Unknown render status: ${e.status}`);
-                        }
+            (e) => {
+                switch (e.status) {
+                    case 'begin': {
+                        logger.info('Rendering started');
+                        this.renderServer?.regl?.clear({
+                            framebuffer: e.target,
+                            color: [0, 0, 0, 0],
+                            depth: 1,
+                        });
+                        break;
                     }
-                },
-            this.canvas
+                    case 'progress': {
+                        logger.info('Rendering progress');
+                        e.server.copyToClient((ctx: CanvasRenderingContext2D, image: ImageData) => {
+                            ctx.putImageData(image, 0, 0);
+                        });
+                        break;
+                    }
+                    case 'finished': {
+                        logger.info('Rendering finished');
+                        e.server.copyToClient((ctx: CanvasRenderingContext2D, image: ImageData) => {
+                            ctx.putImageData(image, 0, 0);
+                        });
+                        break;
+                    }
+                    case 'cancelled': {
+                        logger.info('Rendering cancelled');
+                        break;
+                    }
+                    default: {
+                        logger.warn(`Unknown render status: ${e.status}`);
+                    }
+                }
+            },
+            this.canvas,
         );
     }
 

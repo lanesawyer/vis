@@ -2,36 +2,74 @@
 
 ---
 <dzi-viewer id="dziViewer" width={500} height={500} />
-<script> 
+<script>
+  import { RenderServer } from '@alleninstitute/vis-core';
+  import { Box2D, type vec2 } from '@alleninstitute/vis-geometry';
+  import { zoom, pan } from '../common/camera';
 
-    import { RenderServer } from '@alleninstitute/vis-core';
-    import type { DziImage } from '@alleninstitute/vis-dzi';
-    import { Box2D, type vec2 } from '@alleninstitute/vis-geometry';   
-    // initialize server and settings in client-side module
-    const screenSize: vec2 = [500, 500];
-    const server = new RenderServer(screenSize, []);
+  // initialize server and settings
+  const screenSize: vec2 = [500, 500];
+  const zoomStep = 0.1;
+  let view = Box2D.create([0, 0], [1, 1]);
+  const server = new RenderServer(screenSize, []);
 
-    const dziImage: DziImage = {
-        format: 'jpeg',
-        imagesUrl:
-            'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/',
-        overlap: 1,
-        size: {
-            width: 13446,
-            height: 11596,
-        },
-        tileSize: 512,
-    };
-    const settings = {
-        camera: { view: Box2D.create([0, 0], [1, 1]), screenSize }
-    };
+  // define the DZI image settings
+  const dziImage = {
+       format: 'jpeg',
+       imagesUrl:
+           'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/',
+       overlap: 1,
+       size: {
+           width: 13446,
+           height: 11596,
+       },
+       tileSize: 512,
+  };
+  let settings = { camera: { view, screenSize } };
 
-    // wait for DOM
-    window.addEventListener('load', () => {
-        const viewer = document.getElementById('dziViewer');
-        if (viewer) {
-            viewer.setRenderServer(server);
-            viewer.setImage(dziImage, settings);
-        }
+  // wait for DOM
+  window.addEventListener('load', () => {
+    /** @type {any} */
+    const viewer = document.getElementById('dziViewer');
+    if (!viewer) return;
+
+    // initialize web component
+    viewer.setRenderServer(server);
+    viewer.setImage(dziImage, settings);
+
+    // pan & zoom state
+    let dragging = false;
+    let lastPos = [0, 0];
+
+    // zoom on wheel
+    viewer.addEventListener('wheel', (e) => {
+         e.preventDefault();
+         const zoomInFactor = 1 / (1 - zoomStep);
+         const zoomOutFactor = 1 - zoomStep;
+         const scale = e.deltaY > 0 ? zoomInFactor : zoomOutFactor;
+         view = zoom(view, screenSize, scale, [e.offsetX, e.offsetY]);
+         settings = { camera: { view, screenSize } };
+         viewer.setImage(dziImage, settings);
     });
+
+    // start pan
+    viewer.addEventListener('mousedown', (e) => {
+         dragging = true;
+         lastPos = [e.offsetX, e.offsetY];
+    });
+    // pan move
+    window.addEventListener('mousemove', (e) => {
+         if (!dragging) return;
+         const dx = e.offsetX - lastPos[0];
+         const dy = e.offsetY - lastPos[1];
+         lastPos = [e.offsetX, e.offsetY];
+         view = pan(view, screenSize, [dx, dy]);
+         settings = { camera: { view, screenSize } };
+         viewer.setImage(dziImage, settings);
+    });
+    // end pan
+    window.addEventListener('mouseup', () => {
+         dragging = false;
+    });
+  });
 </script>

@@ -1,0 +1,37 @@
+---
+
+---
+<dzi-viewer id="dziViewer" width={500} height={500} />
+<script> 
+
+    import { RenderServer } from '@alleninstitute/vis-core';
+    import type { DziImage } from '@alleninstitute/vis-dzi';
+    import { Box2D, type vec2 } from '@alleninstitute/vis-geometry';   
+    // initialize server and settings in client-side module
+    const screenSize: vec2 = [500, 500];
+    const server = new RenderServer(screenSize, []);
+
+    const dziImage: DziImage = {
+        format: 'jpeg',
+        imagesUrl:
+            'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/',
+        overlap: 1,
+        size: {
+            width: 13446,
+            height: 11596,
+        },
+        tileSize: 512,
+    };
+    const settings = {
+        camera: { view: Box2D.create([0, 0], [1, 1]), screenSize }
+    };
+
+    // wait for DOM
+    window.addEventListener('load', () => {
+        const viewer = document.getElementById('dziViewer');
+        if (viewer) {
+            viewer.setRenderServer(server);
+            viewer.setImage(dziImage, settings);
+        }
+    });
+</script>

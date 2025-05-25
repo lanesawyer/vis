@@ -89,6 +89,9 @@ importers:
       '@alleninstitute/vis-core':
         specifier: workspace:*
         version: link:../core
+      '@alleninstitute/vis-dzi':
+        specifier: workspace:*
+        version: link:../dzi
       '@alleninstitute/vis-omezarr':
         specifier: workspace:*
         version: link:../omezarr

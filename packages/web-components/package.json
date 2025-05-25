@@ -31,7 +31,8 @@
     "dependencies": {
         "@alleninstitute/vis-core": "workspace:*",
         "@alleninstitute/vis-omezarr": "workspace:*",
-        "regl": "2.1.1"
+        "regl": "2.1.1",
+        "@alleninstitute/vis-dzi": "workspace:*"
     },
     "packageManager": "pnpm@9.14.2"
 }

@@ -16,12 +16,30 @@ export class DziViewer extends HTMLElement {
 
     constructor() {
         super();
+        logger.info('Creating DziViewer component');
         this.canvas = document.createElement('canvas');
         this.appendChild(this.canvas);
     }
 
     connectedCallback() {
+        logger.info('DziViewer connected');
         this.updateSize();
+        this.addEventListener(
+            'render-server-provided',
+            (e) => {
+                const server = e.detail;
+                this.setRenderServer(server);
+                this.setImage(this.dziImage, this.settings);
+            },
+            { once: true },
+        );
+        // request server from provider
+        this.dispatchEvent(
+            new CustomEvent('request-render-server', {
+                bubbles: true,
+                composed: true,
+            }),
+        );
     }
 
     attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {

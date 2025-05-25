@@ -1,7 +1,5 @@
 
-<render-server-provider>
-    <dzi-viewer id="dziViewer" width={500} height={500} />
-</render-server-provider>
+<dzi-viewer id="dziViewer" width={500} height={500} />
 
 <script>
     import { Box2D } from '@alleninstitute/vis-geometry';
@@ -36,18 +34,8 @@
         const viewer = document.getElementById('dziViewer') as DziViewer | null;
         if (!viewer) return;
 
+        // Set the initial viewer state
         viewer.setImage(dziImage, settings);
-        // listen for render-server-provided before requesting
-        viewer.addEventListener('render-server-provided', (e) => {
-            const server = e.detail;
-            viewer.setRenderServer(server);
-            viewer.setImage(dziImage, settings);
-        }, { once: true });
-        // request server from provider
-        viewer.dispatchEvent(new CustomEvent('request-render-server', {
-            bubbles: true,
-            composed: true
-        }));
 
         // pan & zoom state
         let dragging = false;

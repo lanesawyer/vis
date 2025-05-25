@@ -1,13 +1,14 @@
----
 
----
-<dzi-viewer id="dziViewer" width={500} height={500} />
+<render-server-provider>
+    <dzi-viewer id="dziViewer" width={500} height={500} />
+</render-server-provider>
+
 <script>
-    import { RenderServer } from '@alleninstitute/vis-core';
-    import { Box2D, type vec2 } from '@alleninstitute/vis-geometry';
-    import { type DziViewer } from '@alleninstitute/vis-web-components';
+    import { Box2D } from '@alleninstitute/vis-geometry';
     import { zoom, pan } from '../common/camera';
     import type { DziImage } from '@alleninstitute/vis-dzi';
+    import type { vec2 } from '@alleninstitute/vis-geometry';
+    import type { DziViewer } from '@alleninstitute/vis-web-components';
 
     // initialize server and settings
     const screenSize: vec2 = [500, 500];
@@ -15,7 +16,6 @@
     const zoomInFactor = 1 / (1 - zoomStep);
     const zoomOutFactor = 1 - zoomStep;
     let view = Box2D.create([0, 0], [1, 1]);
-    const server = new RenderServer(screenSize, []);
 
     // define the DZI image settings
     const dziImage: DziImage = {
@@ -31,14 +31,23 @@
     };
     let settings = { camera: { view, screenSize } };
 
-    // wait for DOM
+    // wait for DOM and request render server
     window.addEventListener('load', () => {
         const viewer = document.getElementById('dziViewer') as DziViewer | null;
         if (!viewer) return;
 
-        // initialize web component
-        viewer.setRenderServer(server);
         viewer.setImage(dziImage, settings);
+        // listen for render-server-provided before requesting
+        viewer.addEventListener('render-server-provided', (e) => {
+            const server = e.detail;
+            viewer.setRenderServer(server);
+            viewer.setImage(dziImage, settings);
+        }, { once: true });
+        // request server from provider
+        viewer.dispatchEvent(new CustomEvent('request-render-server', {
+            bubbles: true,
+            composed: true
+        }));
 
         // pan & zoom state
         let dragging = false;

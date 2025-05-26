@@ -7,6 +7,7 @@ import {
     defaultDecoder,
     loadMetadata,
 } from '@alleninstitute/vis-omezarr';
+import { BaseViewer } from './base-viewer';
 
 const URL_REGEX = /^(s3|https):\/\/.*/;
 
@@ -21,28 +22,26 @@ const urlToWebResource = (url: string, region = 'us-west-2'): WebResource | unde
     return resource;
 };
 
-export class OmeZarrViewer extends HTMLElement {
-    private container: HTMLCanvasElement;
-    private renderServer: RenderServer | null = null;
+export class OmeZarrViewer extends BaseViewer {
     private renderer: ReturnType<typeof buildAsyncOmezarrRenderer> | null = null;
     private omeZarrMetadata: OmeZarrMetadata | null = null;
     private settings: RenderSettings | null = null;
 
     constructor() {
         super();
-        this.container = document.createElement('canvas');
-        this.container.id = this.getAttribute('id') || 'ome-zarr-viewer';
-        this.attachShadow({ mode: 'open' }).appendChild(this.container);
     }
 
-    static observedAttributes = ['id', 'url', 'width', 'height'];
+    static get observedAttributes() {
+        return super.observedAttributes.concat(['id', 'url']);
+    }
 
     connectedCallback() {
+        super.connectedCallback();
         logger.info('OmeZarrViewer added to page.');
-        this.updateSize();
     }
 
     disconnectedCallback() {
+        super.disconnectedCallback();
         logger.info('OmeZarrViewer removed from page.');
     }
 
@@ -56,13 +55,8 @@ export class OmeZarrViewer extends HTMLElement {
         }
 
         if (name === 'url') {
-            this.loadOmeZarr();
+            this.onServerReady();
         }
-    }
-
-    public setRenderServer(renderServer: RenderServer) {
-        this.renderServer = renderServer;
-        logger.info('Render server set');
     }
 
     public setSettings(settings: RenderSettings) {
@@ -70,7 +64,8 @@ export class OmeZarrViewer extends HTMLElement {
         this.beginRendering();
     }
 
-    private loadOmeZarr() {
+    protected onServerReady() {
+        logger.info('OmeZarrViewer: Render server is ready');
         const url = this.getAttribute('url');
 
         if (!url) {
@@ -111,9 +106,11 @@ export class OmeZarrViewer extends HTMLElement {
     private beginRendering() {
         logger.info('OmeZarrViewer: Beginning rendering');
         const renderFrame: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
+            logger.info('OmeZarrViewer: Render frame called');
             if (this.renderer && this.omeZarrMetadata && this.settings) {
                 // if we had a stashed buffer of the previous frame...
                 // we could pre-load it into target, right here!
+                logger.info('OmeZarrViewer: Rendering with renderer');
                 return this.renderer(this.omeZarrMetadata, this.settings, callback, target, cache);
             }
             return null;
@@ -168,26 +165,25 @@ export class OmeZarrViewer extends HTMLElement {
                     }
                 }
             },
-            this.container,
+            this.canvas,
         );
-        logger.info('OmeZarrViewer: Rendering started');
     }
 
-    private updateSize() {
-        const width = this.getAttribute('width') || '100';
-        const height = this.getAttribute('height') || '100';
+    // private updateSize() {
+    //     const width = this.getAttribute('width') || '100';
+    //     const height = this.getAttribute('height') || '100';
 
-        this.setAttribute('width', width);
-        this.setAttribute('height', height);
+    //     this.setAttribute('width', width);
+    //     this.setAttribute('height', height);
 
-        this.style.display = 'block';
-        this.style.width = `${width}px`;
-        this.style.height = `${height}px`;
-        this.style.border = '1px solid black';
+    //     this.style.display = 'block';
+    //     this.style.width = `${width}px`;
+    //     this.style.height = `${height}px`;
+    //     this.style.border = '1px solid black';
 
-        this.container.style.width = `${width}px`;
-        this.container.style.height = `${height}px`;
-    }
+    //     this.container.style.width = `${width}px`;
+    //     this.container.style.height = `${height}px`;
+    // }
 }
 
 if (!customElements.get('ome-zarr-viewer')) {

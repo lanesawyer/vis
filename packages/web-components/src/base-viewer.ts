@@ -27,7 +27,7 @@ export abstract class BaseViewer extends HTMLElement {
 
     connectedCallback() {
         logger.info(`${this.tagName} connected`);
-        
+
         if (!customElements.get(RENDER_SERVER_TAG_NAME)) {
             logger.error('Render Server Provider does not exist. Please make sure to include it in the DOM');
         }

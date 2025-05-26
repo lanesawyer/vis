@@ -9,6 +9,7 @@ import { RenderServerProvider } from '../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
 import { SliceView } from './sliceview';
 import { WebComponentViewer } from './web-component-viewer';
+import { makeZarrSettings } from './utils';
 
 type DemoOption = { value: string; label: string; res: WebResource };
 
@@ -49,33 +50,6 @@ const demoOptions: DemoOption[] = [
 
 const screenSize: vec2 = [500, 500];
 const zoomStep = 0.1;
-
-const defaultInterval: Interval = { min: 0, max: 80 };
-
-function makeZarrSettings(screenSize: vec2, view: box2D, orthoVal: number, omezarr: OmeZarrMetadata): RenderSettings {
-    const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
-        acc[val.label ?? `${index}`] = {
-            rgb: val.rgb,
-            gamut: val.range,
-            index,
-        };
-        return acc;
-    }, {} as RenderSettingsChannels);
-
-    const fallbackChannels: RenderSettingsChannels = {
-        R: { rgb: [1.0, 0, 0], gamut: defaultInterval, index: 0 },
-        G: { rgb: [0, 1.0, 0], gamut: defaultInterval, index: 1 },
-        B: { rgb: [0, 0, 1.0], gamut: defaultInterval, index: 2 },
-    };
-
-    return {
-        camera: { screenSize, view },
-        orthoVal,
-        plane: PLANE_XY,
-        tileSize: 256,
-        channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
-    };
-}
 
 export function OmezarrDemo() {
     const [customUrl, setCustomUrl] = useState<string>('');
@@ -270,7 +244,7 @@ export function OmezarrDemo() {
                         </div>
                     </div>
                     <div>
-                        <WebComponentViewer
+                        {/* <WebComponentViewer
                             id="web-component-viewer"
                             selectedDatasetUrl={selectedDatasetUrl}
                             settings={settings}
@@ -280,7 +254,7 @@ export function OmezarrDemo() {
                             onMouseMove={handleWebComponentPan}
                             onMouseLeave={handleMouseUp}
                             onWheel={handleWebComponentZoom}
-                        />
+                        /> */}
                     </div>
                 </div>
             </div>

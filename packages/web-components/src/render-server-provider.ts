@@ -11,8 +11,8 @@ export class RenderServerProvider extends HTMLElement {
         super();
         logger.info('RenderServerProvider created');
         // TODO: Pass in render server options
-        // Initialize RenderServer with a reasonable max size and no extensions
-        this.renderServer = new RenderServer([4096, 4096], []);
+        // Initialize RenderServer with a reasonable max size and oes_texture_float extension for OME-Zarr viewer
+        this.renderServer = new RenderServer([4096, 4096], ['oes_texture_float']);
     }
 
     connectedCallback() {

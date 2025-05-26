@@ -22,7 +22,7 @@ export class DziViewer extends BaseViewer {
     protected onServerReady() {
         if (!this.renderServer) {
             logger.error('Render server is not ready, but onServerReady was called');
-            return
+            return;
         }
         this.renderer = buildAsyncDziRenderer(this.renderServer.regl);
 
@@ -38,6 +38,10 @@ export class DziViewer extends BaseViewer {
             return;
         }
         const renderFrame: RenderFrameFn<DziImage, any> = (target, cache, callback) => {
+            if (!this.renderer || !this.dziImage || !this.settings) {
+                logger.error('DziViewer: Renderer, DziImage, or settings are not set.');
+                return null;
+            }
             return this.renderer(this.dziImage, this.settings, callback, target, cache);
         };
         // renderServer handles scheduling and composition

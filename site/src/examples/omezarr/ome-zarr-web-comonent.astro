@@ -8,6 +8,7 @@
     import type { OmeZarrViewer } from '@alleninstitute/vis-web-components';
     import { makeZarrSettings } from './utils';
     import { loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
+    import type { HttpsResource } from '@alleninstitute/vis-core';
 
     // initialize server and settings
     const screenSize: vec2 = [500, 500];
@@ -16,11 +17,7 @@
     const zoomOutFactor = 1 - zoomStep;
     let view = Box2D.create([0, 0], [1, 1]);
 
-    const thing = {
-        value: 'opt1',
-        label: 'VERSA OME-Zarr Example (HTTPS) (color channels: [R, G, B])',
-        res: { type: 'https', url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/' },
-    };
+    const res: HttpsResource = { type: 'https', url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/' };
 
     // wait for DOM and request render server
     window.addEventListener('load', async () => {
@@ -29,7 +26,7 @@
         if (!viewer) return;
 
         // let settings = { camera: { view, screenSize } };
-        const data = await loadMetadata(thing.res);
+        const data = await loadMetadata(res);
         console.log('data', data);
 
                     const dataset = data.getFirstShapedDataset(0);

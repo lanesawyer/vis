@@ -8,7 +8,6 @@ import { pan, zoom } from '../common/camera';
 import { RenderServerProvider } from '../common/react/render-server-provider';
 import { OmezarrViewer } from './omezarr-viewer';
 import { SliceView } from './sliceview';
-import { WebComponentViewer } from './web-component-viewer';
 import { makeZarrSettings } from './utils';
 
 type DemoOption = { value: string; label: string; res: WebResource };
@@ -122,24 +121,9 @@ export function OmezarrDemo() {
         setView(v);
     };
 
-    const handleWebComponentZoom = (e: WheelEvent) => {
-        const zoomInFactor = 1 / (1 - zoomStep);
-        const zoomOutFactor = 1 - zoomStep;
-        const zoomScale = e.deltaY > 0 ? zoomInFactor : zoomOutFactor;
-        const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
-        setView(v);
-    };
-
     const handlePan = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (dragging) {
             const v = pan(view, screenSize, [e.movementX, e.movementY]);
-            setView(v);
-        }
-    };
-
-    const handleWebComponentPan = (ev: MouseEvent) => {
-        if (dragging) {
-            const v = pan(view, screenSize, [ev.movementX, ev.movementY]);
             setView(v);
         }
     };
@@ -243,32 +227,19 @@ export function OmezarrDemo() {
                             </div>
                         </div>
                     </div>
-                    <div>
-                        {/* <WebComponentViewer
-                            id="web-component-viewer"
-                            selectedDatasetUrl={selectedDatasetUrl}
-                            settings={settings}
-                            screenSize={screenSize}
-                            onMouseDown={handleMouseDown}
-                            onMouseUp={handleMouseUp}
-                            onMouseMove={handleWebComponentPan}
-                            onMouseLeave={handleMouseUp}
-                            onWheel={handleWebComponentZoom}
-                        /> */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
+                        <textarea
+                            id="omezarr-json-view"
+                            readOnly
+                            cols={100}
+                            rows={36}
+                            style={{ resize: 'none' }}
+                            value={omezarrJson}
+                        />
                     </div>
                 </div>
             </div>
-            {/* <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label htmlFor="omezarr-json-view">Selected Image Metadata:</label>
-                <textarea
-                    id="omezarr-json-view"
-                    readOnly
-                    cols={100}
-                    rows={36}
-                    style={{ resize: 'none' }}
-                    value={omezarrJson}
-                />
-            </div> */}
         </RenderServerProvider>
     );
 }

@@ -44,7 +44,7 @@ export class OmeZarrViewer extends BaseViewer {
     // TODO: Take loading out of this, maybe call it in onServerReady?
     protected async onServerReady() {
         this.logger.info('OmeZarrViewer: Render server is ready');
-        
+
         this.beginRendering();
     }
 

@@ -1,6 +1,6 @@
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
 import { buildAsyncDziRenderer } from '@alleninstitute/vis-dzi';
-import { type RenderFrameFn, logger } from '@alleninstitute/vis-core';
+import { type RenderFrameFn } from '@alleninstitute/vis-core';
 import { BaseViewer } from './base-viewer';
 
 export class DziViewer extends BaseViewer {
@@ -10,7 +10,7 @@ export class DziViewer extends BaseViewer {
 
     constructor() {
         super();
-        logger.info('Creating DziViewer component');
+        this.logger.info('Creating DziViewer component');
     }
 
     public setImage(dzi: DziImage, settings: DziRenderSettings) {
@@ -21,7 +21,7 @@ export class DziViewer extends BaseViewer {
 
     protected onServerReady() {
         if (!this.renderServer) {
-            logger.error('Render server is not ready, but onServerReady was called');
+            this.logger.error('Render server is not ready, but onServerReady was called');
             return;
         }
         this.renderer = buildAsyncDziRenderer(this.renderServer.regl);
@@ -39,7 +39,7 @@ export class DziViewer extends BaseViewer {
         }
         const renderFrame: RenderFrameFn<DziImage, any> = (target, cache, callback) => {
             if (!this.renderer || !this.dziImage || !this.settings) {
-                logger.error('DziViewer: Renderer, DziImage, or settings are not set.');
+                this.logger.error('DziViewer: Renderer, DziImage, or settings are not set.');
                 return null;
             }
             return this.renderer(this.dziImage, this.settings, callback, target, cache);
@@ -50,7 +50,7 @@ export class DziViewer extends BaseViewer {
             (e) => {
                 switch (e.status) {
                     case 'begin': {
-                        logger.info('Rendering started');
+                        this.logger.info('Rendering started');
                         this.renderServer?.regl?.clear({
                             framebuffer: e.target,
                             color: [0, 0, 0, 0],
@@ -59,25 +59,25 @@ export class DziViewer extends BaseViewer {
                         break;
                     }
                     case 'progress': {
-                        logger.info('Rendering progress');
+                        this.logger.info('Rendering progress');
                         e.server.copyToClient((ctx, image) => {
                             ctx.putImageData(image, 0, 0);
                         });
                         break;
                     }
                     case 'finished': {
-                        logger.info('Rendering finished');
+                        this.logger.info('Rendering finished');
                         e.server.copyToClient((ctx, image) => {
                             ctx.putImageData(image, 0, 0);
                         });
                         break;
                     }
                     case 'cancelled': {
-                        logger.info('Rendering cancelled');
+                        this.logger.info('Rendering cancelled');
                         break;
                     }
                     default: {
-                        logger.warn(`Unknown render status: ${e.status}`);
+                        this.logger.warn(`Unknown render status: ${e.status}`);
                     }
                 }
             },

@@ -1,6 +1,6 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'none';
 
-class Logger {
+export class Logger {
     private level: LogLevel;
     private name: string;
 

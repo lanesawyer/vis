@@ -1,5 +1,4 @@
-import { type RenderServer } from '@alleninstitute/vis-core';
-import { logger } from '@alleninstitute/vis-core';
+import { Logger, type RenderServer } from '@alleninstitute/vis-core';
 import { RENDER_SERVER_READY, RENDER_SERVER_TAG_NAME } from './render-server-provider';
 
 export const REQUEST_RENDER_SERVER = 'request-render-server';
@@ -7,11 +6,12 @@ export const REQUEST_RENDER_SERVER = 'request-render-server';
 export abstract class BaseViewer extends HTMLElement {
     protected canvas = document.createElement('canvas');
     protected renderServer: RenderServer | null = null;
+    protected logger = new Logger(this.tagName, 'info');
 
     constructor() {
         super();
 
-        logger.info(`Creating ${this.tagName} component`);
+        this.logger.info(`Creating ${this.tagName} component`);
         this.appendChild(this.canvas);
     }
 
@@ -26,10 +26,10 @@ export abstract class BaseViewer extends HTMLElement {
     }
 
     connectedCallback() {
-        logger.info(`${this.tagName} connected`);
+        this.logger.info(`${this.tagName} connected`);
 
         if (!customElements.get(RENDER_SERVER_TAG_NAME)) {
-            logger.error('Render Server Provider does not exist. Please make sure to include it in the DOM');
+            this.logger.error('Render Server Provider does not exist. Please make sure to include it in the DOM');
         }
 
         this.updateSize();
@@ -44,7 +44,7 @@ export abstract class BaseViewer extends HTMLElement {
     }
 
     disconnectedCallback() {
-        logger.info(`${this.tagName} disconnected`);
+        this.logger.info(`${this.tagName} disconnected`);
 
         // Clean up event listeners and references
         this.removeEventListener(RENDER_SERVER_READY, this.onServerReady);

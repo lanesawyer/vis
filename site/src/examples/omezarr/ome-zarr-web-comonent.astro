@@ -25,21 +25,20 @@
         const viewer = document.getElementById('omeZarrViewer') as OmeZarrViewer | null;
         if (!viewer) return;
 
-        // let settings = { camera: { view, screenSize } };
         const data = await loadMetadata(res);
         console.log('data', data);
 
-                    const dataset = data.getFirstShapedDataset(0);
-            if (!dataset) {
-                throw new Error('dataset 0 does not exist!');
-            }
-            const size = sizeInUnits(PLANE_XY, data.attrs.multiscales[0].axes, dataset);
-            if (size) {
-                // logger.info('dataset size', size);
-                const aspectRatio = screenSize[0] / screenSize[1];
-                const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
-                view = Box2D.create([0, 0], adjustedSize);
-            }
+        const dataset = data.getFirstShapedDataset(0);
+        if (!dataset) {
+            throw new Error('dataset 0 does not exist!');
+        }
+        const size = sizeInUnits(PLANE_XY, data.attrs.multiscales[0].axes, dataset);
+        if (size) {
+            // logger.info('dataset size', size);
+            const aspectRatio = screenSize[0] / screenSize[1];
+            const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
+            view = Box2D.create([0, 0], adjustedSize);
+        }
 
         const settings = makeZarrSettings(screenSize, view, 0, data);
 

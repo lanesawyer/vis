@@ -3,6 +3,9 @@ import { buildAsyncDziRenderer } from '@alleninstitute/vis-dzi';
 import { type RenderFrameFn } from '@alleninstitute/vis-core';
 import { BaseViewer } from './base-viewer';
 
+/**
+ * DziViewer is a custom web component for rendering DZI (Deep Zoom Image) files.
+ */
 export class DziViewer extends BaseViewer {
     private renderer: ReturnType<typeof buildAsyncDziRenderer> | null = null;
     private dziImage: DziImage | null = null;

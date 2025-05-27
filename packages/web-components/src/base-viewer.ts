@@ -3,20 +3,27 @@ import { RENDER_SERVER_READY, RENDER_SERVER_TAG_NAME } from './render-server-pro
 
 export const REQUEST_RENDER_SERVER = 'request-render-server';
 
+/**
+ * Base viewer class that provides common functionality for all viewers.
+ * It's primary job is requesting the RenderServer and setting up the canvas (including width and height).
+ *
+ * Concrete implementations should extend this class and implement the `onServerReady` method to
+ * start the rendering process.
+ */
 export abstract class BaseViewer extends HTMLElement {
     protected canvas = document.createElement('canvas');
     protected renderServer: RenderServer | null = null;
+    // TODO: Change to warn once I'm done working on the viewer components
     protected logger = new Logger(this.tagName, 'info');
 
     constructor() {
         super();
 
         this.logger.info(`Creating ${this.tagName} component`);
-        this.appendChild(this.canvas);
+        this.attachShadow({ mode: 'closed' }).appendChild(this.canvas);
     }
 
-    private eventListener(e: Event) {
-        e.stopPropagation();
+    private renderServerReadyListener(e: Event) {
         this.renderServer = (e as CustomEvent<RenderServer>).detail;
         this.onServerReady();
     }
@@ -34,11 +41,11 @@ export abstract class BaseViewer extends HTMLElement {
 
         this.updateSize();
 
-        this.addEventListener(RENDER_SERVER_READY, this.eventListener, { once: true });
+        this.addEventListener(RENDER_SERVER_READY, this.renderServerReadyListener, { once: true });
         this.dispatchEvent(
             new CustomEvent(REQUEST_RENDER_SERVER, {
+                // Has to bubble so we can catch it in the RenderServerProvider
                 bubbles: true,
-                composed: true,
             }),
         );
     }
@@ -46,8 +53,7 @@ export abstract class BaseViewer extends HTMLElement {
     disconnectedCallback() {
         this.logger.info(`${this.tagName} disconnected`);
 
-        // Clean up event listeners and references
-        this.removeEventListener(RENDER_SERVER_READY, this.onServerReady);
+        // Clean references (no need to remove event listener, it will be removed automatically due to `once`)
         this.renderServer?.destroyClient(this.canvas);
         this.renderServer = null;
         this.canvas.remove();
@@ -68,9 +74,8 @@ export abstract class BaseViewer extends HTMLElement {
         const h = this.getAttribute('height') || '100';
         this.canvas.width = parseInt(w, 10);
         this.canvas.height = parseInt(h, 10);
-        this.style.display = 'inline-block';
-        this.style.width = `${w}px`;
-        this.style.height = `${h}px`;
+        this.canvas.style.width = `${this.canvas.width}px`;
+        this.canvas.style.height = `${this.canvas.height}px`;
     }
 
     /**

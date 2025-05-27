@@ -44,10 +44,20 @@ export class OmeZarrViewer extends BaseViewer {
     // TODO: Take loading out of this, maybe call it in onServerReady?
     protected async onServerReady() {
         this.logger.info('OmeZarrViewer: Render server is ready');
+        if (!this.renderServer) {
+            this.logger.error('Render server is not ready, but onServerReady was called');
+            return;
+        }
 
-        this.beginRendering();
+        // If we have the settings, we can start rendering immediately, otherwise it's on the dev
+        // to call setSettings with the appropriate parameters later.
+        if (this.settings) {
+            this.beginRendering();
+        }
     }
 
+    // TODO: We're loading in here but also in the Astro component. Should let the web component do the loading
+    // and then we can ask for the data we need in the Astro component.
     private async loadData() {
         this.logger.info('OmeZarrViewer: Loading data');
         const url = this.getAttribute('url');

@@ -1,13 +1,16 @@
+---
+const url =
+    'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-analysis/H20.33.040-A12-I6-analysis.dzi';
+---
 
 <div style="display: flex; gap: 5px;">
-    <dzi-viewer id="dziViewer" width={300} height={300} />
-    <dzi-viewer id="dziViewer2" width={300} height={300} style="margin: 0"/>
+    <dzi-viewer id="dziViewer" {url} width={300} height={300} />
+    <dzi-viewer id="dziViewer2" {url} width={300} height={300} style="margin: 0"/>
 </div>
 
 <script>
     import { Box2D } from '@alleninstitute/vis-geometry';
     import { zoom, pan } from '../common/camera';
-    import type { DziImage } from '@alleninstitute/vis-dzi';
     import type { vec2 } from '@alleninstitute/vis-geometry';
     import type { DziViewer } from '@alleninstitute/vis-web-components';
 
@@ -19,18 +22,6 @@
     const screenSize: vec2 = [500, 500];
     let view = Box2D.create([0, 0], [1, 1]);
 
-    // define the DZI image settings
-    const dziImage: DziImage = {
-        format: 'jpeg',
-        imagesUrl:
-            'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_HPW332DMO29NC92JPWA/H20.33.029-A12-I6-primary/H20.33.029-A12-I6-primary_files/',
-        overlap: 1,
-        size: {
-            width: 13446,
-            height: 11596,
-        },
-        tileSize: 512,
-    };
     let settings = { camera: { view, screenSize } };
 
     const viewer = document.getElementById('dziViewer') as DziViewer | null;
@@ -46,8 +37,8 @@
         const scale = e.deltaY > 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
         view = zoom(view, screenSize, scale, [e.offsetX, e.offsetY]);
         settings = { camera: { view, screenSize } };
-        viewer?.setImage(dziImage, settings);
-        viewer2?.setImage(dziImage, settings);
+        viewer?.setRenderSettings(settings);
+        viewer2?.setRenderSettings(settings);
     };
 
     const mouseDownListener = (e: MouseEvent) => {
@@ -70,13 +61,13 @@
         view = pan(view, screenSize, [dx, dy]);
         settings = { camera: { view, screenSize } };
 
-        viewer?.setImage(dziImage, settings);
-        viewer2?.setImage(dziImage, settings);
+        viewer?.setRenderSettings(settings);
+        viewer2?.setRenderSettings(settings);
     };
 
     // Set the initial viewer state
-    viewer?.setImage(dziImage, settings);
-    viewer2?.setImage(dziImage, settings);
+    viewer?.setRenderSettings(settings);
+    viewer2?.setRenderSettings(settings);
 
     viewer?.addEventListener('wheel', wheelListener);
     viewer2?.addEventListener('wheel', wheelListener);

@@ -19,7 +19,7 @@ export abstract class BaseViewer extends HTMLElement {
     constructor() {
         super();
 
-        this.logger.info(`Creating ${this.tagName} component`);
+        this.logger.info(`Creating component`);
         this.attachShadow({ mode: 'closed' }).appendChild(this.canvas);
     }
 
@@ -33,7 +33,7 @@ export abstract class BaseViewer extends HTMLElement {
     }
 
     connectedCallback() {
-        this.logger.info(`${this.tagName} connected`);
+        this.logger.info('Connected');
 
         if (!customElements.get(RENDER_SERVER_TAG_NAME)) {
             this.logger.error('Render Server Provider does not exist. Please make sure to include it in the DOM');
@@ -51,7 +51,7 @@ export abstract class BaseViewer extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.logger.info(`${this.tagName} disconnected`);
+        this.logger.info('Disconnected');
 
         // Clean references (no need to remove event listener, it will be removed automatically due to `once`)
         this.renderServer?.destroyClient(this.canvas);

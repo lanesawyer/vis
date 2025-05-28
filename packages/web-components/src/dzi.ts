@@ -1,5 +1,5 @@
 import type { DziImage, DziRenderSettings } from '@alleninstitute/vis-dzi';
-import { buildAsyncDziRenderer } from '@alleninstitute/vis-dzi';
+import { buildAsyncDziRenderer, fetchDziMetadata } from '@alleninstitute/vis-dzi';
 import { type RenderFrameFn } from '@alleninstitute/vis-core';
 import { BaseViewer } from './base-viewer';
 
@@ -11,13 +11,34 @@ export class DziViewer extends BaseViewer {
     private dziImage: DziImage | null = null;
     private settings: DziRenderSettings | null = null;
 
-    constructor() {
-        super();
-        this.logger.info('Creating DziViewer component');
+    static get observedAttributes() {
+        return super.observedAttributes.concat(['url']);
     }
 
-    public setImage(dzi: DziImage, settings: DziRenderSettings) {
-        this.dziImage = dzi;
+    attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
+        super.attributeChangedCallback(name, oldValue, newValue);
+
+        if (oldValue === newValue) {
+            return;
+        }
+
+        // TODO: This is firing, saying the old value was null, but the constructor already had the value
+        // either ignore it if we already have the data for that URL or figure out how to not get it
+        // firing that weird way
+        if (name === 'url') {
+            this.logger.info(`URL changed from ${oldValue} to ${newValue}`);
+            this.loadData().then(() => {
+                // If we've set the settings before, we can render immediately
+                // after loading the DZI metadata.
+                // Prevents bugs where the web component is re-mounted
+                if (this.settings) {
+                    this.beginRendering();
+                }
+            });
+        }
+    }
+
+    public setRenderSettings(settings: DziRenderSettings) {
         this.settings = settings;
         this.beginRendering();
     }
@@ -36,13 +57,31 @@ export class DziViewer extends BaseViewer {
         }
     }
 
+    private async loadData() {
+        const url = this.getAttribute('url');
+        if (!url) {
+            this.logger.error('loadData failed: No URL provided for DZI metadata');
+            return;
+        }
+
+        this.logger.info(`Loading DZI metadata for ${url}`);
+        const data = await fetchDziMetadata(url);
+        if (!data) {
+            this.logger.error(`Failed to load DZI metadata from ${url}`);
+            return;
+        }
+
+        this.dziImage = data;
+    }
+
     private beginRendering() {
         if (!this.renderServer || !this.renderer || !this.dziImage || !this.settings) {
+            this.logger.info('Tried to render, but missing required data');
             return;
         }
         const renderFrame: RenderFrameFn<DziImage, any> = (target, cache, callback) => {
             if (!this.renderer || !this.dziImage || !this.settings) {
-                this.logger.error('DziViewer: Renderer, DziImage, or settings are not set.');
+                this.logger.error('Renderer, DziImage, or settings are not set.');
                 return null;
             }
             return this.renderer(this.dziImage, this.settings, callback, target, cache);

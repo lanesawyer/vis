@@ -106,8 +106,6 @@ function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
 //     note also that is more of a maximum size... for example I've seen 9/0_0.jpeg have a size of 421x363, both of those are lower than pow(2,9)=512
 //     note also that overlap is ADDED to the tile-size, which is a weird choice, as tileSize seems like it must be a power of 2...🤷‍♀️
 
-
-
 /**
  *
  * @param dzi the dzi image to read tiles from

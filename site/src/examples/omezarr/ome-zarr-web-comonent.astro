@@ -3,12 +3,11 @@
 
 <script>
     import { Box2D, PLANE_XY } from '@alleninstitute/vis-geometry';
-    import { zoom, pan } from '../common/camera';
     import type { vec2 } from '@alleninstitute/vis-geometry';
     import type { OmeZarrViewer } from '@alleninstitute/vis-web-components';
     import { makeZarrSettings } from './utils';
     import { loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
-    import type { HttpsResource } from '@alleninstitute/vis-core';
+    import { pan, zoom, type HttpsResource } from '@alleninstitute/vis-core';
 
     // initialize server and settings
     const screenSize: vec2 = [500, 500];

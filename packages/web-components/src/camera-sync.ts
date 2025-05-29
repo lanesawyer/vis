@@ -3,7 +3,7 @@ import type { DziViewer } from './dzi';
 /**
  * CameraSync pairs sibling viewers by listening for one viewer's `camera-change` event
  * and applying its camera settings to all other viewers under this element.
- * 
+ *
  * TODO: Consider more than just the DZI and 2D use cases
  */
 export class CameraSync extends HTMLElement {

@@ -1,11 +1,6 @@
----
-const url =
-    'https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-analysis/H20.33.040-A12-I6-analysis.dzi';
----
-
 <div style="display: flex; gap: 5px;">
-    <dzi-viewer id="dziViewer" {url} width={300} height={300} />
-    <dzi-viewer id="dziViewer2" {url} width={300} height={300} style="margin: 0"/>
+    <dzi-viewer id="dziViewer" url="https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-primary/H20.33.040-A12-I6-primary.dzi" width={300} height={300} />
+    <dzi-viewer id="dziViewer2" url="https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-analysis/H20.33.040-A12-I6-analysis.dzi" width={300} height={300} style="margin: 0"/>
 </div>
 
 <script>

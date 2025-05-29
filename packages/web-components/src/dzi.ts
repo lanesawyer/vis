@@ -22,19 +22,9 @@ export class DziViewer extends BaseViewer {
             return;
         }
 
-        // TODO: This is firing, saying the old value was null, but the constructor already had the value
-        // either ignore it if we already have the data for that URL or figure out how to not get it
-        // firing that weird way
         if (name === 'url') {
             this.logger.info(`URL changed from ${oldValue} to ${newValue}`);
-            this.loadData().then(() => {
-                // If we've set the settings before, we can render immediately
-                // after loading the DZI metadata.
-                // Prevents bugs where the web component is re-mounted
-                if (this.settings) {
-                    this.beginRendering();
-                }
-            });
+            this.loadData();
         }
     }
 
@@ -49,12 +39,6 @@ export class DziViewer extends BaseViewer {
             return;
         }
         this.renderer = buildAsyncDziRenderer(this.renderServer.regl);
-
-        // If the necessary properties are set, start rendering, otherwise it's on the dev
-        // to call setImage with the appropriate parameters later.
-        if (this.dziImage && this.settings) {
-            this.beginRendering();
-        }
     }
 
     private async loadData() {
@@ -65,13 +49,17 @@ export class DziViewer extends BaseViewer {
         }
 
         this.logger.info(`Loading DZI metadata for ${url}`);
+
         const data = await fetchDziMetadata(url);
         if (!data) {
             this.logger.error(`Failed to load DZI metadata from ${url}`);
             return;
         }
 
+        this.logger.info(`Successfully loaded DZI metadata from ${url}`);
         this.dziImage = data;
+
+        this.beginRendering();
     }
 
     private beginRendering() {

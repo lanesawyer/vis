@@ -39,9 +39,19 @@ export class DziViewer extends BaseViewer {
         }
     }
 
-    public setRenderSettings(settings: DziRenderSettings) {
+    public setRenderSettings(settings: DziRenderSettings, emitEvent: boolean = true) {
         this.settings = settings;
         this.beginRendering();
+        // emit camera-change so sync wrappers can listen
+        if (emitEvent) {
+            this.dispatchEvent(
+                new CustomEvent('camera-change', {
+                    detail: settings.camera,
+                    bubbles: true,
+                    composed: true,
+                }),
+            );
+        }
     }
 
     protected onServerReady() {
@@ -135,7 +145,7 @@ export class DziViewer extends BaseViewer {
         // wire pan/zoom on the canvas
         this.canvas.addEventListener('wheel', this.handleWheel);
         this.canvas.addEventListener('mousedown', this.handleMouseDown);
-        this.canvas.addEventListener('mouseup',   this.handleMouseUp);
+        this.canvas.addEventListener('mouseup', this.handleMouseUp);
         this.canvas.addEventListener('mousemove', this.handleMouseMove);
     }
 

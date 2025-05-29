@@ -1,78 +1,15 @@
-<div style="display: flex; gap: 5px;">
-    <dzi-viewer id="dziViewer" url="https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-primary/H20.33.040-A12-I6-primary.dzi" width={300} height={300} />
-    <dzi-viewer id="dziViewer2" url="https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-analysis/H20.33.040-A12-I6-analysis.dzi" width={300} height={300} style="margin: 0"/>
-</div>
-
-<script>
-    import { Box2D } from '@alleninstitute/vis-geometry';
-    import { zoom, pan } from '../common/camera';
-    import type { vec2 } from '@alleninstitute/vis-geometry';
-    import type { DziViewer } from '@alleninstitute/vis-web-components';
-
-    const ZOOM_STEP = 0.1;
-    const ZOOM_IN_FACTOR = 1 / (1 - ZOOM_STEP);
-    const ZOOM_OUT_FACTOR = 1 - ZOOM_STEP;
-
-    // initialize server and settings
-    const screenSize: vec2 = [500, 500];
-    let view = Box2D.create([0, 0], [1, 1]);
-
-    let settings = { camera: { view, screenSize } };
-
-    const viewer = document.getElementById('dziViewer') as DziViewer | null;
-    const viewer2 = document.getElementById('dziViewer2') as DziViewer | null;
-
-    // pan & zoom state
-    let dragging = false;
-    let lastPos = [0, 0];
-
-    const wheelListener = (e: WheelEvent) => {
-        e.preventDefault();
-
-        const scale = e.deltaY > 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
-        view = zoom(view, screenSize, scale, [e.offsetX, e.offsetY]);
-        settings = { camera: { view, screenSize } };
-        viewer?.setRenderSettings(settings);
-        viewer2?.setRenderSettings(settings);
-    };
-
-    const mouseDownListener = (e: MouseEvent) => {
-        dragging = true;
-        lastPos = [e.offsetX, e.offsetY];
-    };
-
-    const mouseUpListener = () => {
-        dragging = false;
-    };
-
-    const mouseMoveListener = (e: MouseEvent) => {
-        if (!dragging) {
-            return;
-        }
-
-        const dx = e.offsetX - lastPos[0];
-        const dy = e.offsetY - lastPos[1];
-        lastPos = [e.offsetX, e.offsetY];
-        view = pan(view, screenSize, [dx, dy]);
-        settings = { camera: { view, screenSize } };
-
-        viewer?.setRenderSettings(settings);
-        viewer2?.setRenderSettings(settings);
-    };
-
-    // Set the initial viewer state
-    viewer?.setRenderSettings(settings);
-    viewer2?.setRenderSettings(settings);
-
-    // viewer?.addEventListener('wheel', wheelListener);
-    // viewer2?.addEventListener('wheel', wheelListener);
-
-    // viewer?.addEventListener('mousedown', mouseDownListener);
-    // viewer2?.addEventListener('mousedown', mouseDownListener);
-    
-    // viewer?.addEventListener('mouseup', mouseUpListener);
-    // viewer2?.addEventListener('mouseup', mouseUpListener);
-
-    // viewer?.addEventListener('mousemove', mouseMoveListener);
-    // viewer2?.addEventListener('mousemove', mouseMoveListener);
-</script>
+<camera-sync>
+    <div style="display: flex; gap: 10px;">
+        <dzi-viewer
+            url="https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-primary/H20.33.040-A12-I6-primary.dzi"
+            width={300}
+            height={300}
+        />
+        <dzi-viewer
+            url="https://idk-etl-prod-download-bucket.s3.amazonaws.com/idf-23-10-pathology-images/pat_images_JGCXWER774NLNWX2NNR/H20.33.040-A12-I6-analysis/H20.33.040-A12-I6-analysis.dzi"
+            width={300}
+            height={300}
+            style="margin: 0"
+        />
+    </div>
+</camera-sync>

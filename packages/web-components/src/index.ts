@@ -7,3 +7,6 @@ export { RenderServerProvider } from './render-server-provider';
 // Viewers
 export { OmeZarrViewer } from './ome-zarr';
 export { DziViewer } from './dzi';
+
+// Utils
+export { CameraSync } from './camera-sync';

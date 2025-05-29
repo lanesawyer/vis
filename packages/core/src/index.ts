@@ -20,3 +20,4 @@ export type {
 export { RenderServer } from './abstract/render-server';
 
 export { Logger, logger } from './logger';
+export { pan, zoom } from './camera';

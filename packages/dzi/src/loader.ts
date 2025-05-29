@@ -95,7 +95,6 @@ function decodeDzi(xmlString: string, url: string): DziImage | undefined {
 function tileUrl(dzi: DziImage, level: number, tile: TileIndex): string {
     return `${dzi.imagesUrl}${level.toFixed(0)}/${tile.col.toFixed(0)}_${tile.row.toFixed(0)}.${dzi.format}`;
 }
-
 // some quick notes on this deep zoom image format:
 // 1. image / tile names are given by {column}_{row}.{format}
 // 2. a layer (which may contain multiple tiles) is a folder

@@ -10,3 +10,4 @@ export { DziViewer } from './dzi';
 
 // Utils
 export { CameraSync } from './camera-sync';
+export { SvgRenderer } from './svg-renderer';

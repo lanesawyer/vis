@@ -16,16 +16,31 @@ export class CameraSync extends HTMLElement {
     }
 
     private handleCameraChange(event: Event) {
-        event.stopPropagation();
-        const camera = (event as CustomEvent).detail;
+        const custom = event as CustomEvent & {
+            detail: { view: any; screenSize?: [number, number]; __sync?: boolean };
+        };
+        // ignore events originating from sync to prevent loops
+        if (custom.detail.__sync) {
+            return;
+        }
+        custom.stopPropagation();
+        const camera = custom.detail;
         const source = event.target as HTMLElement;
         // Apply camera settings to all sibling DziViewers
         this.querySelectorAll('dzi-viewer').forEach((v) => {
             if (v !== source) {
-                // TODO: Better typing, also maybe don't call setRenderSettings if it doesn't exist yet?
-                // TODO: Probably just need to play with the mounting order of the components
-                // Apply settings without re-emitting to avoid recursion
-                (v as DziViewer).setRenderSettings?.({ camera }, false);
+                // Apply settings without re-emitting core event
+                const target = v as DziViewer;
+                target.setRenderSettings?.({ camera }, false);
+                // dispatch sync camera-change for plugins
+                const syncDetail = { ...camera, __sync: true };
+                target.dispatchEvent(
+                    new CustomEvent('camera-change', {
+                        detail: syncDetail,
+                        bubbles: true,
+                        composed: true,
+                    }),
+                );
             }
         });
     }

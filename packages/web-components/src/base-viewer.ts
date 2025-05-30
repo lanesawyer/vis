@@ -19,8 +19,23 @@ export abstract class BaseViewer extends HTMLElement {
     constructor() {
         super();
 
+        // make host a positioned block so shadow children size correctly
+        this.style.display = 'block';
+        this.style.position = 'relative';
         this.logger.info(`Creating component`);
-        this.attachShadow({ mode: 'closed' }).appendChild(this.canvas);
+        // build shadow DOM: canvas + plugin slot
+        const shadow = this.attachShadow({ mode: 'closed' });
+        // render surface
+        this.canvas.style.position = 'relative';
+        this.canvas.style.top = '0';
+        this.canvas.style.left = '0';
+        this.canvas.style.width = '100%';
+        this.canvas.style.height = '100%';
+        shadow.appendChild(this.canvas);
+        // plugin slot for overlays (SVG, annotations, controls, etc.)
+        const slot = document.createElement('slot');
+        slot.name = 'plugin';
+        shadow.appendChild(slot);
     }
 
     private renderServerReadyListener(e: Event) {
@@ -76,6 +91,9 @@ export abstract class BaseViewer extends HTMLElement {
         this.canvas.height = parseInt(h, 10);
         this.canvas.style.width = `${this.canvas.width}px`;
         this.canvas.style.height = `${this.canvas.height}px`;
+        // size host element to match canvas
+        this.style.width = `${this.canvas.width}px`;
+        this.style.height = `${this.canvas.height}px`;
     }
 
     /**

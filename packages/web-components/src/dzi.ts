@@ -80,6 +80,16 @@ export class DziViewer extends BaseViewer {
         this.logger.info(`Successfully loaded DZI metadata from ${url}`);
         this.dziImage = data;
 
+        // adjust display height to maintain image aspect ratio
+        // preserve width attribute, recompute height based on metadata
+        if (this.dziImage) {
+            const widthPx = Number(this.getAttribute('width')) || this.canvas.width;
+            const ratio = this.dziImage.size.height / this.dziImage.size.width;
+            const newHeight = Math.round(widthPx * ratio);
+            // setting attribute will trigger updateSize()
+            this.setAttribute('height', newHeight.toString());
+        }
+
         this.beginRendering();
     }
 

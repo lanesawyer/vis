@@ -46,7 +46,7 @@ const demoOptions: DemoOption[] = [
     },
 ];
 
-const screenSize: vec2 = [500, 500];
+const screenSize: vec2 = [800, 800];
 const zoomStep = 0.1;
 
 const defaultInterval: Interval = { min: 0, max: 80 };
@@ -170,10 +170,10 @@ export function OmezarrDemo() {
         setView(v);
     };
 
-    const handleZoom = (e: React.WheelEvent<HTMLCanvasElement>) => {
-        // e.preventDefault();
+    const handleZoom = (e: WheelEvent) => {
+        e.preventDefault();
         const zoomScale = e.deltaY > 0 ? 1.1 : 0.9;
-        const v = zoom(view, screenSize, zoomScale, [e.nativeEvent.offsetX, e.nativeEvent.offsetY]);
+        const v = zoom(view, screenSize, zoomScale, [e.offsetX, e.offsetY]);
         setView(v);
     };
 

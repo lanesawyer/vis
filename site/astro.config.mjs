@@ -13,6 +13,7 @@ export default defineConfig({
     integrations: [
         starlight({
             title: 'Vis',
+            customCss: ['./custom.css'],
             social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/AllenInstitute/vis' }],
             sidebar: [
                 {
@@ -22,6 +23,10 @@ export default defineConfig({
                 {
                     label: 'Examples',
                     autogenerate: { directory: 'examples' },
+                },
+                {
+                    label: 'Packages',
+                    autogenerate: { directory: 'packages' },
                 },
                 {
                     label: 'Developers',

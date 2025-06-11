@@ -7,9 +7,10 @@ import {
     defaultDecoder,
     loadMetadata,
     makeZarrSettings,
+    sizeInUnits,
 } from '@alleninstitute/vis-omezarr';
 import { BaseViewer } from './base-viewer';
-import { Box2D } from '@alleninstitute/vis-geometry';
+import { Box2D, PLANE_XY, type vec2 } from '@alleninstitute/vis-geometry';
 
 const URL_REGEX = /^(s3|https):\/\/.*/;
 
@@ -103,6 +104,18 @@ export class OmeZarrViewer extends BaseViewer {
         this.logger.info('OmeZarr metadata loaded:', metadata);
         this.omeZarrMetadata = metadata;
 
+        const dataset = metadata.getFirstShapedDataset(0);
+        if (!dataset) {
+            throw new Error('dataset 0 does not exist!');
+        }
+        const size = sizeInUnits(PLANE_XY, metadata.attrs.multiscales[0].axes, dataset);
+        if (size) {
+            // logger.info('dataset size', size);
+            const aspectRatio = this.screenSize[0] / this.screenSize[1];
+            const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
+            this.view = Box2D.create([0, 0], adjustedSize);
+        }
+
         if (!this.renderServer) {
             this.logger.error('OmeZarrViewer: No render server set.');
             return;
@@ -113,6 +126,7 @@ export class OmeZarrViewer extends BaseViewer {
             queueOptions: { maximumInflightAsyncTasks: 2 },
         });
         this.logger.info('OmeZarr renderer created:');
+        this.beginRendering();
     }
 
     private compose(ctx: CanvasRenderingContext2D, image: ImageData) {
@@ -203,7 +217,7 @@ export class OmeZarrViewer extends BaseViewer {
         e.preventDefault();
         const scale = e.deltaY > 0 ? OmeZarrViewer.ZOOM_IN : OmeZarrViewer.ZOOM_OUT;
         this.view = zoom(this.view, this.screenSize, scale, [e.offsetX, e.offsetY]);
-        const newSettings = makeZarrSettings(this.screenSize, this.view, 0, this.omeZarrMetadata);
+        const newSettings = makeZarrSettings(this.omeZarrMetadata, this.screenSize, this.view, PLANE_XY, 0);
         this.setRenderSettings(newSettings);
     };
 
@@ -224,7 +238,7 @@ export class OmeZarrViewer extends BaseViewer {
         const dy = e.offsetY - this.lastPos[1];
         this.lastPos = [e.offsetX, e.offsetY];
         this.view = pan(this.view, this.screenSize, [dx, dy]);
-        const newSettings = makeZarrSettings(this.screenSize, this.view, 0, this.omeZarrMetadata);
+        const newSettings = makeZarrSettings(this.omeZarrMetadata, this.screenSize, this.view, PLANE_XY, 0);
         this.setRenderSettings(newSettings);
     };    
 }

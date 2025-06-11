@@ -129,10 +129,11 @@ export const defaultDecoder = (
 const defaultInterval: Interval = { min: 0, max: 80 };
 
 export function makeZarrSettings(
+    omezarr: OmeZarrMetadata,
     screenSize: vec2,
     view: box2D,
-    orthoVal: number,
-    omezarr: OmeZarrMetadata,
+    plane: CartesianPlane,
+    orthoVal: number
 ): RenderSettings {
     const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
         acc[val.label ?? `${index}`] = {
@@ -151,8 +152,8 @@ export function makeZarrSettings(
 
     return {
         camera: { screenSize, view },
+        plane,
         orthoVal,
-        plane: PLANE_XY,
         tileSize: 256,
         channels: Object.keys(omezarrChannels).length > 0 ? omezarrChannels : fallbackChannels,
     };

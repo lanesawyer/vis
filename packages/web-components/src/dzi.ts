@@ -176,7 +176,10 @@ export class DziViewer extends BaseViewer {
     };
 
     private handleMouseMove = (e: MouseEvent) => {
-        if (!this.dragging) return;
+        if (!this.dragging) {
+            return;
+        }
+
         const dx = e.offsetX - this.lastPos[0];
         const dy = e.offsetY - this.lastPos[1];
         this.lastPos = [e.offsetX, e.offsetY];

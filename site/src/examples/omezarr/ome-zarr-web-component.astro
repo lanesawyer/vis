@@ -2,76 +2,76 @@
 <ome-zarr-viewer id="omeZarrViewer" url="https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/" width={500} height={500} />
 
 <script>
-    import { Box2D, PLANE_XY } from '@alleninstitute/vis-geometry';
-    import type { vec2 } from '@alleninstitute/vis-geometry';
-    import type { OmeZarrViewer } from '@alleninstitute/vis-web-components';
-    import { makeZarrSettings } from './utils';
-    import { loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
-    import { pan, zoom, type HttpsResource } from '@alleninstitute/vis-core';
+    // import { Box2D, PLANE_XY } from '@alleninstitute/vis-geometry';
+    // import type { vec2 } from '@alleninstitute/vis-geometry';
+    // import type { OmeZarrViewer } from '@alleninstitute/vis-web-components';
+    // import { makeZarrSettings } from './utils';
+    // import { loadMetadata, sizeInUnits } from '@alleninstitute/vis-omezarr';
+    // import { pan, zoom, type HttpsResource } from '@alleninstitute/vis-core';
 
-    // initialize server and settings
-    const screenSize: vec2 = [500, 500];
-    const zoomStep = 0.1;
-    const ZOOM_IN_FACTOR = 1 / (1 - zoomStep);
-    const ZOOM_OUT_FACTOR = 1 - zoomStep;
-    let view = Box2D.create([0, 0], [1, 1]);
+    // // initialize server and settings
+    // const screenSize: vec2 = [500, 500];
+    // const zoomStep = 0.1;
+    // const ZOOM_IN_FACTOR = 1 / (1 - zoomStep);
+    // const ZOOM_OUT_FACTOR = 1 - zoomStep;
+    // let view = Box2D.create([0, 0], [1, 1]);
 
-    const res: HttpsResource = { type: 'https', url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/' };
+    // const res: HttpsResource = { type: 'https', url: 'https://neuroglancer-vis-prototype.s3.amazonaws.com/VERSA/scratch/0500408166/' };
 
-    console.log('loaded');
-    const viewer = document.getElementById('omeZarrViewer') as OmeZarrViewer | null;
+    // console.log('loaded');
+    // const viewer = document.getElementById('omeZarrViewer') as OmeZarrViewer | null;
 
-    const data = await loadMetadata(res);
+    // const data = await loadMetadata(res);
 
-    const dataset = data.getFirstShapedDataset(0);
-    if (!dataset) {
-        throw new Error('dataset 0 does not exist!');
-    }
-    const size = sizeInUnits(PLANE_XY, data.attrs.multiscales[0].axes, dataset);
-    if (size) {
-        // logger.info('dataset size', size);
-        const aspectRatio = screenSize[0] / screenSize[1];
-        const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
-        view = Box2D.create([0, 0], adjustedSize);
-    }
+    // const dataset = data.getFirstShapedDataset(0);
+    // if (!dataset) {
+    //     throw new Error('dataset 0 does not exist!');
+    // }
+    // const size = sizeInUnits(PLANE_XY, data.attrs.multiscales[0].axes, dataset);
+    // if (size) {
+    //     // logger.info('dataset size', size);
+    //     const aspectRatio = screenSize[0] / screenSize[1];
+    //     const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
+    //     view = Box2D.create([0, 0], adjustedSize);
+    // }
 
-    const settings = makeZarrSettings(screenSize, view, 0, data);
+    // const settings = makeZarrSettings(screenSize, view, 0, data);
 
-    // Set the initial viewer state
-    viewer?.setSettings(settings);
+    // // Set the initial viewer state
+    // viewer?.setRenderSettings(settings);
 
-    // pan & zoom state
-    let dragging = false;
-    let lastPos = [0, 0];
+    // // pan & zoom state
+    // let dragging = false;
+    // let lastPos = [0, 0];
 
-    viewer?.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const scale = e.deltaY > 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
-        view = zoom(view, screenSize, scale, [e.offsetX, e.offsetY]);
-        const newSettings = makeZarrSettings(screenSize, view, 0, data);
-        viewer.setSettings(newSettings);
-    });
+    // viewer?.addEventListener('wheel', (e) => {
+    //     e.preventDefault();
+    //     const scale = e.deltaY > 0 ? ZOOM_IN_FACTOR : ZOOM_OUT_FACTOR;
+    //     view = zoom(view, screenSize, scale, [e.offsetX, e.offsetY]);
+    //     const newSettings = makeZarrSettings(screenSize, view, 0, data);
+    //     viewer.setRenderSettings(newSettings);
+    // });
 
-    viewer?.addEventListener('mousedown', (e) => {
-        dragging = true;
-        lastPos = [e.offsetX, e.offsetY];
-    });
+    // viewer?.addEventListener('mousedown', (e) => {
+    //     dragging = true;
+    //     lastPos = [e.offsetX, e.offsetY];
+    // });
 
-    viewer?.addEventListener('mouseup', () => {
-        dragging = false;
-    });
+    // viewer?.addEventListener('mouseup', () => {
+    //     dragging = false;
+    // });
 
-    viewer?.addEventListener('mousemove', (e) => {
-        if (!dragging) {
-            return;
-        }
+    // viewer?.addEventListener('mousemove', (e) => {
+    //     if (!dragging) {
+    //         return;
+    //     }
 
-        const dx = e.offsetX - lastPos[0];
-        const dy = e.offsetY - lastPos[1];
-        lastPos = [e.offsetX, e.offsetY];
-        view = pan(view, screenSize, [dx, dy]);
-        const newSettings = makeZarrSettings(screenSize, view, 0, data);
-        viewer.setSettings(newSettings);
-    });
+    //     const dx = e.offsetX - lastPos[0];
+    //     const dy = e.offsetY - lastPos[1];
+    //     lastPos = [e.offsetX, e.offsetY];
+    //     view = pan(view, screenSize, [dx, dy]);
+    //     const newSettings = makeZarrSettings(screenSize, view, 0, data);
+    //     viewer.setRenderSettings(newSettings);
+    // });
 
 </script>

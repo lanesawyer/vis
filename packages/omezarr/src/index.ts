@@ -11,6 +11,7 @@ export {
     type VoxelTile,
     defaultDecoder,
     getVisibleTiles,
+    makeZarrSettings,
 } from './sliceview/loader';
 export { buildTileRenderer, buildRGBTileRenderer } from './sliceview/tile-renderer';
 export {

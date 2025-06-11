@@ -1,4 +1,4 @@
-import { type RenderFrameFn, type WebResource } from '@alleninstitute/vis-core';
+import { pan, zoom, type RenderFrameFn, type WebResource } from '@alleninstitute/vis-core';
 import {
     type OmeZarrMetadata,
     type RenderSettings,
@@ -6,8 +6,10 @@ import {
     buildAsyncOmezarrRenderer,
     defaultDecoder,
     loadMetadata,
+    makeZarrSettings,
 } from '@alleninstitute/vis-omezarr';
 import { BaseViewer } from './base-viewer';
+import { Box2D } from '@alleninstitute/vis-geometry';
 
 const URL_REGEX = /^(s3|https):\/\/.*/;
 
@@ -15,6 +17,16 @@ export class OmeZarrViewer extends BaseViewer {
     private renderer: ReturnType<typeof buildAsyncOmezarrRenderer> | null = null;
     private omeZarrMetadata: OmeZarrMetadata | null = null;
     private settings: RenderSettings | null = null;
+
+    // camera state for built-in pan/zoom
+    private view = Box2D.create([0, 0], [1, 1]);
+    private screenSize: [number, number] = [100, 100];
+    private dragging = false;
+    private lastPos: [number, number] = [0, 0];
+    private static readonly ZOOM_STEP = 0.1;
+    private static readonly ZOOM_IN = 1 / (1 - OmeZarrViewer.ZOOM_STEP);
+    private static readonly ZOOM_OUT = 1 - OmeZarrViewer.ZOOM_STEP;
+
 
     constructor() {
         super();
@@ -36,7 +48,7 @@ export class OmeZarrViewer extends BaseViewer {
         }
     }
 
-    public setSettings(settings: RenderSettings) {
+    public setRenderSettings(settings: RenderSettings) {
         this.settings = settings;
         this.beginRendering();
     }
@@ -172,6 +184,49 @@ export class OmeZarrViewer extends BaseViewer {
             this.canvas,
         );
     }
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.screenSize = [this.canvas.width, this.canvas.height];
+
+        // wire pan/zoom on the canvas
+        this.canvas.addEventListener('wheel', this.handleWheel);
+        this.canvas.addEventListener('mousedown', this.handleMouseDown);
+        this.canvas.addEventListener('mouseup', this.handleMouseUp);
+        this.canvas.addEventListener('mousemove', this.handleMouseMove);
+    }
+
+    private handleWheel = (e: WheelEvent) => {
+        if (!this.omeZarrMetadata) {
+            return;
+        }
+        e.preventDefault();
+        const scale = e.deltaY > 0 ? OmeZarrViewer.ZOOM_IN : OmeZarrViewer.ZOOM_OUT;
+        this.view = zoom(this.view, this.screenSize, scale, [e.offsetX, e.offsetY]);
+        const newSettings = makeZarrSettings(this.screenSize, this.view, 0, this.omeZarrMetadata);
+        this.setRenderSettings(newSettings);
+    };
+
+    private handleMouseDown = (e: MouseEvent) => {
+        this.dragging = true;
+        this.lastPos = [e.offsetX, e.offsetY];
+    };
+
+    private handleMouseUp = () => {
+        this.dragging = false;
+    };
+
+    private handleMouseMove = (e: MouseEvent) => {
+        if (!this.dragging || !this.omeZarrMetadata) {
+            return;
+        }
+        const dx = e.offsetX - this.lastPos[0];
+        const dy = e.offsetY - this.lastPos[1];
+        this.lastPos = [e.offsetX, e.offsetY];
+        this.view = pan(this.view, this.screenSize, [dx, dy]);
+        const newSettings = makeZarrSettings(this.screenSize, this.view, 0, this.omeZarrMetadata);
+        this.setRenderSettings(newSettings);
+    };    
 }
 
 if (!customElements.get('ome-zarr-viewer')) {

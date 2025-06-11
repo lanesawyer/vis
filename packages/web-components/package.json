@@ -16,7 +16,7 @@
     "scripts": {
         "typecheck": "tsc --noEmit",
         "build": "parcel build --no-cache",
-        "dev": "parcel watch --port 1238",
+        "dev": "parcel watch --port 1239",
         "test": "vitest --watch",
         "test:ci": "vitest run",
         "coverage": "vitest run --coverage"

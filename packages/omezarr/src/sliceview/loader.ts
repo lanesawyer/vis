@@ -133,7 +133,7 @@ export function makeZarrSettings(
     screenSize: vec2,
     view: box2D,
     plane: CartesianPlane,
-    orthoVal: number
+    orthoVal: number,
 ): RenderSettings {
     const omezarrChannels = omezarr.colorChannels.reduce((acc, val, index) => {
         acc[val.label ?? `${index}`] = {

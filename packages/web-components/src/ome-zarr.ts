@@ -28,7 +28,6 @@ export class OmeZarrViewer extends BaseViewer {
     private static readonly ZOOM_IN = 1 / (1 - OmeZarrViewer.ZOOM_STEP);
     private static readonly ZOOM_OUT = 1 - OmeZarrViewer.ZOOM_STEP;
 
-
     constructor() {
         super();
     }
@@ -56,7 +55,7 @@ export class OmeZarrViewer extends BaseViewer {
 
     // TODO: Take loading out of this, maybe call it in onServerReady?
     protected async onServerReady() {
-        this.logger.info('OmeZarrViewer: Render server is ready');
+        this.logger.info('Render server is ready');
         if (!this.renderServer) {
             this.logger.error('Render server is not ready, but onServerReady was called');
             return;
@@ -69,14 +68,12 @@ export class OmeZarrViewer extends BaseViewer {
         }
     }
 
-    // TODO: We're loading in here but also in the Astro component. Should let the web component do the loading
-    // and then we can ask for the data we need in the Astro component.
     private async loadData() {
-        this.logger.info('OmeZarrViewer: Loading data');
+        this.logger.info('Loading data');
         const url = this.getAttribute('url');
 
         if (!url) {
-            this.logger.error('OmeZarrViewer: No URL provided.');
+            this.logger.error('No URL provided.');
             return;
         }
 
@@ -93,31 +90,30 @@ export class OmeZarrViewer extends BaseViewer {
         const webResource = urlToWebResource(url);
 
         if (!webResource) {
-            this.logger.error('OmeZarrViewer: Invalid URL provided.');
+            this.logger.error('Invalid URL provided.');
             return;
         }
 
-        this.logger.info('OmeZarrViewer: Loading metadata from URL:', url);
+        this.logger.info('Loading metadata from URL:', url);
 
         const metadata = await loadMetadata(webResource);
 
-        this.logger.info('OmeZarr metadata loaded:', metadata);
+        this.logger.info('Metadata loaded:', metadata);
         this.omeZarrMetadata = metadata;
 
         const dataset = metadata.getFirstShapedDataset(0);
         if (!dataset) {
-            throw new Error('dataset 0 does not exist!');
+            throw new Error('Dataset 0 does not exist!');
         }
         const size = sizeInUnits(PLANE_XY, metadata.attrs.multiscales[0].axes, dataset);
         if (size) {
-            // logger.info('dataset size', size);
             const aspectRatio = this.screenSize[0] / this.screenSize[1];
             const adjustedSize: vec2 = [size[0], size[0] / aspectRatio];
             this.view = Box2D.create([0, 0], adjustedSize);
         }
 
         if (!this.renderServer) {
-            this.logger.error('OmeZarrViewer: No render server set.');
+            this.logger.error('No render server set.');
             return;
         }
         const numChannels = this.omeZarrMetadata.colorChannels.length || 3;
@@ -125,8 +121,9 @@ export class OmeZarrViewer extends BaseViewer {
             numChannels,
             queueOptions: { maximumInflightAsyncTasks: 2 },
         });
-        this.logger.info('OmeZarr renderer created:');
-        this.beginRendering();
+        const newSettings = makeZarrSettings(this.omeZarrMetadata, this.screenSize, this.view, PLANE_XY, 0);
+        this.setRenderSettings(newSettings);
+        this.logger.info('Renderer created');
     }
 
     private compose(ctx: CanvasRenderingContext2D, image: ImageData) {
@@ -136,11 +133,11 @@ export class OmeZarrViewer extends BaseViewer {
     private beginRendering() {
         this.logger.info('OmeZarrViewer: Beginning rendering');
         const renderFrame: RenderFrameFn<OmeZarrMetadata, VoxelTile> = (target, cache, callback) => {
-            this.logger.info('OmeZarrViewer: Render frame called');
+            this.logger.info('Render frame called!');
             if (this.renderer && this.omeZarrMetadata && this.settings) {
                 // if we had a stashed buffer of the previous frame...
                 // we could pre-load it into target, right here!
-                this.logger.info('OmeZarrViewer: Rendering with renderer');
+                this.logger.info('Rendering with renderer');
                 return this.renderer(this.omeZarrMetadata, this.settings, callback, target, cache);
             }
             return null;
@@ -240,7 +237,7 @@ export class OmeZarrViewer extends BaseViewer {
         this.view = pan(this.view, this.screenSize, [dx, dy]);
         const newSettings = makeZarrSettings(this.omeZarrMetadata, this.screenSize, this.view, PLANE_XY, 0);
         this.setRenderSettings(newSettings);
-    };    
+    };
 }
 
 if (!customElements.get('ome-zarr-viewer')) {

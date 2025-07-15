@@ -35,7 +35,8 @@
         "build": "astro build",
         "preview": "astro preview",
         "astro": "astro",
-        "typecheck": "astro check"
+        "typecheck": "astro check",
+        "changelog": "git-cliff -o changelog.md"
     },
     "devDependencies": {
         "@types/file-saver": "2.0.7",
